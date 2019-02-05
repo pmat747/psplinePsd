@@ -19,6 +19,8 @@ gibbs_pspline_postProposal <- function(data,
 
   ### specific operations ###
 
+  k = psd$k;
+
   if(is.null(psd)){
     stop("include an output from gibbs_psline function");
   }
@@ -27,8 +29,6 @@ gibbs_pspline_postProposal <- function(data,
     stop("Change specifications: Either increase Ntotal or decrease thin
          parameters, otherwise the covariance matrix of the weights is singular")
   }
-
-  k = psd$k;
 
   ### ###
 
