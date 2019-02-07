@@ -67,7 +67,7 @@ gibbs_pspline_simple <- function(data,
   delta[1] <- delta.alpha/delta.beta;
   phi[1]   <- phi.alpha/(phi.beta * delta[1]);
 
-  # starting value for the weigths
+  # starting value for the weights
   #w      <- rep(0,k-1);
   w = pdgrm / sum(pdgrm);
   #w = w[round(seq(1, length(w), length = k-1))];
@@ -75,8 +75,8 @@ gibbs_pspline_simple <- function(data,
   w[which(w==0)] = 1e-50; # prevents errors when there are zeros
   w = w/sum(w);
   w = w[-k];
-  w = log(w / (1 - sum(w)));
-  W = matrix(w, ncol = 1);
+  v = log(w / (1 - sum(w)));
+  V = matrix(v, ncol = 1);
 
   ###
   # Since the number of knots are fixed,
@@ -88,11 +88,11 @@ gibbs_pspline_simple <- function(data,
 
   # Store log likelihood
   ll.trace    <- rep(NA, Ntotal);
-  ll.trace[1] <- llike(omega, FZ, k, W[, 1], tau[1], pdgrm, degree,
+  ll.trace[1] <- llike(omega, FZ, k, V[, 1], tau[1], pdgrm, degree,
                        db.list)$llike;
 
   Count = NULL; # ACCEPTANCE PROBABILITY
-  sigma = 1;    # variance of proposal distb for weigths
+  sigma = 1;    # variance of proposal distb for weights
   count = 0.4;  # starting value for acc pbb - optimal value
 
   ptime = proc.time()[1]
@@ -109,7 +109,7 @@ gibbs_pspline_simple <- function(data,
     lp.list <- lpost(omega,
                      FZ,
                      k,
-                     W[, i],
+                     V[, i],
                      tau[i],
                      tau.alpha,
                      tau.beta,
@@ -130,9 +130,9 @@ gibbs_pspline_simple <- function(data,
     ### WEIGHT ###
     ##############
 
-    W.store = W[, i];
+    V.store = V[, i];
 
-    W.star  = W.store;
+    V.star  = V.store;
 
     aux     = sample(k-1);
 
@@ -155,12 +155,12 @@ gibbs_pspline_simple <- function(data,
 
       pos         = aux[j];
 
-      W.star[pos] = W.store[pos] + stats::rnorm(1, sd = sigma); # 0.1
+      V.star[pos] = V.store[pos] + stats::rnorm(1, sd = sigma); # 0.1
 
       lp.list <- lpost(omega,
                        FZ,
                        k,
-                       W.star, # proposal value
+                       V.star, # proposal value
                        tau[i],
                        tau.alpha,
                        tau.beta,
@@ -175,30 +175,30 @@ gibbs_pspline_simple <- function(data,
                        degree,
                        db.list)
 
-      f.W.star <- lp.list$lp;
+      f.V.star <- lp.list$lp;
 
       # log posterior for previous iteration
-      f.W <- f.store;
+      f.V <- f.store;
 
       #Accept/reject
 
-      alpha1 <- min(0, f.W.star - f.W); # log acceptance ratio
+      alpha1 <- min(0, f.V.star - f.V); # log acceptance ratio
 
       if(log(stats::runif(1, 0, 1)) < alpha1) {
 
-        W.store[pos] <- W.star[pos];  # Accept W.star
-        f.store      <- f.W.star;
+        V.store[pos] <- V.star[pos];  # Accept W.star
+        f.store      <- f.V.star;
         count        <- count + 1; # ACCEPTANCE PROBABILITY
 
       }else {
 
-        W.star[pos] = W.store[pos]; # reseting proposal value
+        V.star[pos] = V.store[pos]; # reseting proposal value
 
       }
 
     } # End updating weights
 
-    W = cbind(W, W.store);
+    V = cbind(V, V.store);
     Count[i] = count; # Acceptance probability
 
     ###########
@@ -206,7 +206,7 @@ gibbs_pspline_simple <- function(data,
     ###########
 
     phi[i+1] = stats::rgamma(1, shape = k/2 + phi.alpha,
-                             rate = phi.beta * delta[i] + t(W[,i+1]) %*% P %*% W[,i+1] / 2);
+                             rate = phi.beta * delta[i] + t(V[,i+1]) %*% P %*% V[,i+1] / 2);
 
     #############
     ### delta ###
@@ -221,7 +221,7 @@ gibbs_pspline_simple <- function(data,
 
     # Directly sample tau from conjugate Inverse-Gamma density
 
-    q.psd <- qpsd(omega, k, W[, i + 1], degree, db.list)$psd;
+    q.psd <- qpsd(omega, k, V[, i + 1], degree, db.list)$psd;
     m <- n - 2;
     q <- rep(NA, m);
     q[1] <- q.psd[1];
@@ -236,7 +236,7 @@ gibbs_pspline_simple <- function(data,
     ### Compute log likelihood ###
     ##############################
 
-    ll.trace[i + 1] <- llike(omega, FZ, k, W[, i + 1], tau[i + 1], pdgrm,
+    ll.trace[i + 1] <- llike(omega, FZ, k, V[, i + 1], tau[i + 1], pdgrm,
                              degree, db.list)$llike;
 
   }  # END: MCMC loop
@@ -246,7 +246,7 @@ gibbs_pspline_simple <- function(data,
   tau  <- tau[keep];
   phi  <- phi[keep];
   delta<- delta[keep];
-  W    <- W[, keep];
+  V    <- V[, keep];
   ll.trace <- ll.trace[keep];
 
   fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
@@ -254,8 +254,7 @@ gibbs_pspline_simple <- function(data,
 
   # Store PSDs
   for (isample in 1:length(keep)) {
-    q.psd <- qpsd(omega, k, W[, isample],
-                  degree, db.list); # db.list ADDED
+    q.psd <- qpsd(omega, k, V[, isample], degree, db.list); # db.list ADDED
     fpsd.sample[, isample] <- tau[isample] * q.psd$psd;
     #knots.trace[1:length(q.psd$knots), isample] <- q.psd$knots
     log.fpsd.sample[, isample] <- logfuller(fpsd.sample[, isample]); # Create transformed version
@@ -287,13 +286,13 @@ gibbs_pspline_simple <- function(data,
 
   tau_mean = mean(tau);
 
-  w_means = unname(apply(W, 1, mean));
+  v_means = unname(apply(V, 1, mean));
 
-  l = llike(omega, FZ, k, w = w_means,
+  l = llike(omega, FZ, k, v = v_means,
             tau = tau_mean, pdgrm, degree, db.list)$llike;
 
-  ls = apply(rbind(tau, W), 2, function(x){
-             llike(omega, FZ, k, w = x[-1],
+  ls = apply(rbind(tau, V), 2, function(x){
+             llike(omega, FZ, k, v = x[-1],
              tau = x[1], pdgrm, degree, db.list)$llike});
   ls = unname(ls);
 
@@ -311,7 +310,7 @@ gibbs_pspline_simple <- function(data,
                 tau = tau,
                 phi = phi,
                 delta = delta,
-                W = W,
+                V = V,
                 ll.trace = ll.trace,
                 pdgrm = pdgrm * rescale ^ 2,
                 n = n,

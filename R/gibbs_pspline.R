@@ -17,7 +17,7 @@
 #'    \item{psd.u05,psd.u95}{90\% uniform credibility interval}
 #'    \item{fpsd.sample}{posterior power spectral density estimates}
 #'    \item{k}{number of B-splines}
-#'    \item{tau,phi,delta,W}{posterior traces of model parameters}
+#'    \item{tau,phi,delta,V}{posterior traces of model parameters}
 #'    \item{ll.trace}{trace of log likelihood}
 #'    \item{pdgrm}{periodogram}
 #'    \item{n}{integer length of input time series}

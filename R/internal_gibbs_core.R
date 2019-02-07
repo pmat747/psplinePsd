@@ -47,12 +47,12 @@ dbspline = function (x, knots, degree = 3)  {
 #' Compute unnormalised PSD using random mixture of B-splines
 #' @importFrom Rcpp evalCpp
 #' @keywords internal
-qpsd = function (omega, k, w, degree, db.list)
+qpsd = function (omega, k, v, degree, db.list)
 {
 
-  expW   <- exp(w)
-  #weight <- (diag(k-1) - expW %*% t(rep(1, k-1))/(1+sum(expW)) ) %*% expW;
-  weight <- expW / (1+sum(expW));
+  expV   <- exp(v)
+  #weight <- (diag(k-1) - expW %*% t(rep(1, k-1))/(1+sum(expV)) ) %*% expV;
+  weight <- expV / (1+sum(expV));
   weight <- c(weight, 1-sum(weight));
 
   psd <- densityMixture(weight, db.list)
@@ -66,24 +66,26 @@ qpsd = function (omega, k, w, degree, db.list)
 #'   unlike the function "qpsd" defined above
 #' @importFrom Rcpp evalCpp
 #' @keywords internal
-qpsd = function (omega, k, w, degree, db.list)
+qpsd = function (omega, k, v, degree, db.list)
 {
-  w      <- as.numeric(w);
-  expW   <- exp(w);
+  v      <- as.numeric(v);
+  expV   <- exp(v);
 
-  if(any(is.infinite(expW))){
+  # converting v into a weight
 
-    # this uses a log-version in case w contains large values
+  if(any(is.infinite(expV))){
 
-    ls     = logplusvec(c(0,w)); # log(1+ sum e^{v_i})
-    weight = exp(w - ls);
+    # using a log-version in case w contains large values
+
+    ls     = logplusvec(c(0,v)); # log(1+ sum e^{v_i})
+    weight = exp(v - ls);
 
   }else{
     # Matrix form
-    # weight <- (diag(k-1) - expW %*% t(rep(1, k-1))/(1+sum(expW)) ) %*% expW;
+    # weight <- (diag(k-1) - expV %*% t(rep(1, k-1))/(1+sum(expV)) ) %*% expV;
     # weight <- c(weight, 1-sum(weight));
-    ls     = 1 + sum(expW);
-    weight = expW / ls;
+    ls     = 1 + sum(expV);
+    weight = expV / ls;
   }
   s       <- 1-sum(weight);
   weight  <- c(weight, ifelse(s<0, 0, s));
@@ -113,12 +115,12 @@ logplusvec = function(x){
 }
 
 #' @keywords internal
-lprior = function (k, w, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta,
+lprior = function (k, v, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta,
                    delta, delta.alpha, delta.beta, P)
 {
   # Sigma^(-1) = P
 
-  logprior <- (k-1)*log(phi)/2 - phi * t(w) %*% P %*% w / 2 + #MNormal on weights
+  logprior <- (k-1)*log(phi)/2 - phi * t(v) %*% P %*% v / 2 + #MNormal on weights
 
     phi.alpha * log(delta) + (phi.alpha - 1) * log(phi) - phi.beta * delta * phi + # log prior for phi (Gamma distb)
 
@@ -131,11 +133,11 @@ lprior = function (k, w, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta,
 
 #' log Whittle likelihood
 #' @keywords internal
-llike = function (omega, FZ, k, w, tau, pdgrm, degree, db.list)
+llike = function (omega, FZ, k, v, tau, pdgrm, degree, db.list)
 {
   n <- length(FZ)
   m <- n - 2
-  qq.psd <- qpsd(omega, k, w, degree, db.list)
+  qq.psd <- qpsd(omega, k, v, degree, db.list)
   q.psd <- qq.psd$psd
   q <- rep(NA, m)
   q[1] <- q.psd[1]
@@ -149,13 +151,13 @@ llike = function (omega, FZ, k, w, tau, pdgrm, degree, db.list)
 
 #' Unnormalised log posterior
 #' @keywords internal
-lpost = function (omega, FZ, k, w, tau, tau.alpha, tau.beta,
+lpost = function (omega, FZ, k, v, tau, tau.alpha, tau.beta,
                   phi, phi.alpha, phi.beta, delta, delta.alpha, delta.beta,
                   P, pdgrm, degree, db.list)
 {
-  ll <- llike(omega, FZ, k, w, tau, pdgrm, degree, db.list)
+  ll <- llike(omega, FZ, k, v, tau, pdgrm, degree, db.list)
 
-  lp <- ll$llike + lprior(k, w, tau, tau.alpha, tau.beta, phi,
+  lp <- ll$llike + lprior(k, v, tau, tau.alpha, tau.beta, phi,
                           phi.alpha, phi.beta, delta, delta.alpha, delta.beta, P)
 
   return(list(lp = lp, db.list = ll$db.list))
