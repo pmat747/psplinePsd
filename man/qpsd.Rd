@@ -4,9 +4,9 @@
 \alias{qpsd}
 \title{Compute unnormalised PSD using random mixture of B-splines}
 \usage{
-qpsd(omega, k, w, degree, db.list)
+qpsd(omega, k, v, degree, db.list)
 
-qpsd(omega, k, w, degree, db.list)
+qpsd(omega, k, v, degree, db.list)
 }
 \description{
 Compute unnormalised PSD using random mixture of B-splines

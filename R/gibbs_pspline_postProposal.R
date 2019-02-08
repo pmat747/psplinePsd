@@ -2,6 +2,9 @@
 #'   the proposals for the weights
 #'
 #' @importFrom Rcpp evalCpp
+#' @importFrom expm sqrtm
+#' @importFrom stats median rnorm runif rgamma
+#' @useDynLib psplinePsd, .registration = TRUE
 #' @keywords internal
 gibbs_pspline_postProposal <- function(data,
                                        Ntotal,
@@ -99,7 +102,7 @@ gibbs_pspline_postProposal <- function(data,
   #w = w[-k];
   #v = log(w / (1 - sum(w)));print(w)
 
-  v = apply(psd$V, 1, median);
+  v = apply(psd$V, 1, stats::median);
   #w = psd$W[dim(pilotmcmc$W)[1], ]; # last value of psd
 
   ### ###
@@ -358,7 +361,7 @@ gibbs_pspline_postProposal <- function(data,
                 psd.p95 = psd.p95 * rescale ^ 2,
                 psd.u05 = psd.u05 * rescale ^ 2,
                 psd.u95 = psd.u95 * rescale ^ 2,
-                fpsd.sample = fpsd.sample,
+                fpsd.sample = fpsd.sample * rescale ^ 2,
                 k = k,
                 tau = tau,
                 phi = phi,

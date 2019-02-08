@@ -50,6 +50,7 @@
 #' lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
 #' }
 #' @importFrom Rcpp evalCpp
+#' @useDynLib psplinePsd, .registration = TRUE
 #' @export
 gibbs_pspline <- function(data,
                           Ntotal,

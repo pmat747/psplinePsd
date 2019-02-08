@@ -4,7 +4,7 @@
 \alias{lpost}
 \title{Unnormalised log posterior}
 \usage{
-lpost(omega, FZ, k, w, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta,
+lpost(omega, FZ, k, v, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta,
   delta, delta.alpha, delta.beta, P, pdgrm, degree, db.list)
 }
 \description{

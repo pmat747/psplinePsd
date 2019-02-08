@@ -1,6 +1,8 @@
 #' This function does not need a posterior pilot sample
 #'
 #' @importFrom Rcpp evalCpp
+#' @importFrom stats median rnorm runif rgamma
+#' @useDynLib psplinePsd, .registration = TRUE
 #' @keywords internal
 gibbs_pspline_simple <- function(data,
                                  Ntotal,
@@ -305,7 +307,7 @@ gibbs_pspline_simple <- function(data,
                 psd.p95 = psd.p95 * rescale ^ 2,
                 psd.u05 = psd.u05 * rescale ^ 2,
                 psd.u95 = psd.u95 * rescale ^ 2,
-                fpsd.sample = fpsd.sample,
+                fpsd.sample = fpsd.sample * rescale ^ 2,
                 k = k,
                 tau = tau,
                 phi = phi,

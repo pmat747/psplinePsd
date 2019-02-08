@@ -4,6 +4,6 @@
 #' C++ function for building a density mixture, given mixture weights and functions.
 #' @keywords internal
 densityMixture <- function(weights, densities) {
-    .Call('_psplinePsd_densityMixture', PACKAGE = 'psplinePsd', weights, densities)
+    .Call(`_psplinePsd_densityMixture`, weights, densities)
 }
 
