@@ -2,9 +2,6 @@
 #'   the proposals for the weights
 #'
 #' @importFrom Rcpp evalCpp
-#' @importFrom expm sqrtm
-#' @importFrom stats median rnorm runif rgamma
-#' @useDynLib psplinePsd, .registration = TRUE
 #' @keywords internal
 gibbs_pspline_postProposal <- function(data,
                                        Ntotal,
@@ -18,7 +15,8 @@ gibbs_pspline_postProposal <- function(data,
                                        delta.beta,
                                        k = NULL,
                                        degree = 3,
-                                       psd) {
+                                       psd,
+                                       add = FALSE) {
 
   ### specific operations ###
 
@@ -83,29 +81,30 @@ gibbs_pspline_postProposal <- function(data,
   ### Using gibbs_pspline output ###
   ##################################
 
-  # Starting values
-  tau[1]   <- stats::median(psd$tau);  # stats::var(data) / (2 * pi);
-  delta[1] <- stats::median(psd$delta);# delta.alpha / delta.beta;
-  phi[1]   <- stats::median(psd$phi);  # phi.alpha/(phi.beta * delta[1]);
-
-  # starting value for the weights
+  # Proposal calibration
   muV  = apply(psd$V, 1, mean); # mean vector - posterior samples
   covV = stats::cov(t(psd$V));  # covariance matrix - posterior samples
   sqrt.covV = expm::sqrtm(covV);
-  #Sigma = sqrt(diag(covV));
 
-  # Used when psd is NULL
-  #w = pdgrm / sum(pdgrm);
-  #w = w[round(seq(1, length(w), length = k))];
-  #w[which(w==0)] = 1e-50; # prevents errors when there are zeros
-  #w = w/sum(w);
-  #w = w[-k];
-  #v = log(w / (1 - sum(w)));print(w)
+  # Starting values
 
-  v = apply(psd$V, 1, stats::median);
-  #w = psd$W[dim(pilotmcmc$W)[1], ]; # last value of psd
+  if( add ==TRUE){
 
-  ### ###
+    pilot_N = length(mcmc$tau);
+
+    tau[1]   <- psd$tau[pilot_N];
+    delta[1] <- psd$delta[pilot_N];
+    phi[1]   <- psd$phi[pilot_N];
+    v        <- psd$V[, pilot_N];
+
+  }else{
+
+    tau[1]   <- stats::median(psd$tau);  # stats::var(data) / (2 * pi);
+    delta[1] <- stats::median(psd$delta);# delta.alpha / delta.beta;
+    phi[1]   <- stats::median(psd$phi);  # phi.alpha/(phi.beta * delta[1]);
+    v        <- apply(psd$V, 1, median);
+
+  }
 
   v = solve(sqrt.covV) %*% (v - muV);
 
@@ -297,16 +296,49 @@ gibbs_pspline_postProposal <- function(data,
   delta <- delta[keep];
   V     <- V[, keep];
   ll.trace <- ll.trace[keep];
+  
+  V = apply(V,2, function(x) sqrt.covV %*% x + muV); # converting to actual V
 
   fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
   # knots.trace <- matrix(NA, nrow = kmax, ncol = length(keep))
 
   # Store PSDs
   for (isample in 1:length(keep)) {
-    q.psd <- qpsd(omega, k, sqrt.covV %*% V[, isample] + muV, degree, db.list); # db.list ADDED
+    #q.psd <- qpsd(omega, k, sqrt.covV %*% V[, isample] + muV, degree, db.list); # db.list ADDED
+    q.psd <- qpsd(omega, k, V[, isample], degree, db.list); # db.list ADDED
     fpsd.sample[, isample] <- tau[isample] * q.psd$psd;
     #knots.trace[1:length(q.psd$knots), isample] <- q.psd$knots
     log.fpsd.sample[, isample] <- logfuller(fpsd.sample[, isample]); # Create transformed version
+  }
+
+  if(add == TRUE){
+
+    cat("Pilot and current analyses have been merged", "\n");
+
+    count = c(psd$count * k, Count); # k factor is cancelled return output
+
+    # db.list is equal in both analyses
+
+    delta = c(psd$delta, delta);
+
+    fpsd.sample = cbind(psd$fpsd.sample, fpsd.sample)
+
+    log.fpsd.sample = cbind(apply(psd$fpsd.sample, 2, logfuller),
+                            log.fpsd.sample);
+
+    ll.trace = c(psd$ll.trace, ll.trace);
+
+    # pdgrm is equal in both analyses
+
+    phi = c(psd$phi, phi);
+
+    # psd.mean, psd.median, psd.p05, psd.p95, psd.u95
+    #   are calculated below from fpsd.sample
+
+    tau = c(psd$tau, tau);
+
+    V   = cbind(psd$V, V);
+
   }
 
   # Compute point estimates and 90% Pointwise CIs
@@ -334,15 +366,16 @@ gibbs_pspline_postProposal <- function(data,
   ###########
 
   tau_mean = mean(tau);
-
-  v_means = unname(apply(V, 1, mean));
-
-  l = llike(omega, FZ, k, v = sqrt.covV %*% v_means + muV,
+  
+  v_means = unname(apply(V, 1, mean)); # V was converted above
+  
+  l = llike(omega, FZ, k, v = v_means,
             tau = tau_mean, pdgrm, degree, db.list)$llike;
-
+  
   ls = apply(rbind(tau, V), 2, function(x){
-    llike(omega, FZ, k, v = sqrt.covV %*% x[-1] + muV,
-          tau = x[1], pdgrm, degree, db.list)$llike});
+             llike(omega, FZ, k, v = x[-1],
+             tau = x[1], pdgrm, degree, db.list)$llike});
+
   ls = unname(ls);
 
   # http://kylehardman.com/BlogPosts/View/6
@@ -361,7 +394,7 @@ gibbs_pspline_postProposal <- function(data,
                 psd.p95 = psd.p95 * rescale ^ 2,
                 psd.u05 = psd.u05 * rescale ^ 2,
                 psd.u95 = psd.u95 * rescale ^ 2,
-                fpsd.sample = fpsd.sample * rescale ^ 2,
+                fpsd.sample = fpsd.sample,
                 k = k,
                 tau = tau,
                 phi = phi,

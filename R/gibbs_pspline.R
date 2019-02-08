@@ -11,6 +11,7 @@
 #' @param k number of B-splines
 #' @param degree positive integer specifying the degree of the B-spline densities (default is 3)
 #' @param psd output from \code{gibbs_pspline} function
+#' @param add logical value indicating wether to add pilot posterior samples "psde" to the current analysis
 #' @return A list with S3 class 'psd' containing the following components:
 #'    \item{psd.median,psd.mean}{psd estimates: (pointwise) posterior median and mean}
 #'    \item{psd.p05,psd.p95}{90\% pointwise credibility interval}
@@ -50,7 +51,6 @@
 #' lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
 #' }
 #' @importFrom Rcpp evalCpp
-#' @useDynLib psplinePsd, .registration = TRUE
 #' @export
 gibbs_pspline <- function(data,
                           Ntotal,
@@ -64,7 +64,8 @@ gibbs_pspline <- function(data,
                           delta.beta = 1,
                           k = NULL,
                           degree = 3,
-                          psd = NULL) {
+                          psd = NULL,
+                          add = FALSE) {
 
   if(is.null(psd)){
 
@@ -95,7 +96,8 @@ gibbs_pspline <- function(data,
                                      delta.beta = delta.beta,
                                      k = k,
                                      degree = degree,
-                                     psd = psd);
+                                     psd = psd,
+                                     add = add);
   }
 
   return(out);

@@ -7,7 +7,7 @@
 gibbs_pspline(data, Ntotal, burnin, thin = 1, tau.alpha = 0.001,
   tau.beta = 0.001, phi.alpha = 1, phi.beta = 1e-05,
   delta.alpha = 1, delta.beta = 1, k = NULL, degree = 3,
-  psd = NULL)
+  psd = NULL, add = FALSE)
 }
 \arguments{
 \item{data}{numeric vector}
@@ -29,6 +29,8 @@ gibbs_pspline(data, Ntotal, burnin, thin = 1, tau.alpha = 0.001,
 \item{degree}{positive integer specifying the degree of the B-spline densities (default is 3)}
 
 \item{psd}{output from \code{gibbs_pspline} function}
+
+\item{add}{logical value indicating wether to add pilot posterior samples "psde" to the current analysis}
 }
 \value{
 A list with S3 class 'psd' containing the following components:
