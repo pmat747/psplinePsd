@@ -30,7 +30,7 @@ gibbs_pspline(data, Ntotal, burnin, thin = 1, tau.alpha = 0.001,
 
 \item{psd}{output from \code{gibbs_pspline} function}
 
-\item{add}{logical value indicating wether to add pilot posterior samples "psde" to the current analysis}
+\item{add}{logical value indicating wether to add pilot posterior samples "psd" to the current analysis}
 }
 \value{
 A list with S3 class 'psd' containing the following components:
@@ -65,12 +65,16 @@ data = data - mean(data)
 
 # Run MCMC (may take some time)
 # pilot run
-pilotmcmc = gibbs_pspline(data, 5000, 2500)
-mcmc = gibbs_pspline(data, 5000, 2500, psd = pilotmcmc)
+pilotmcmc = gibbs_pspline(data, 2500, 500);
+mcmc1 = gibbs_pspline(data, 3000, 2000, psd = pilotmcmc);
+mcmc2 = gibbs_pspline(data, 3000, 0, psd = mcmc1, add = TRUE); # reciclying mcmc1 samples
 require(beyondWhittle)  # For psd_arma() function
 freq = 2 * pi / n * (1:(n / 2 + 1) - 1)[-c(1, n / 2 + 1)]  # Remove first and last frequency
 psd.true = psd_arma(freq, ar = 0.9, ma = numeric(0), sigma2 = 1)  # True PSD
-plot(mcmc)  # Plot log PSD (see documentation of plot.psd)
+plot(mcmc1)  # Plot log PSD (see documentation of plot.psd)
+lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
+
+plot(mcmc2)  # Plot log PSD (see documentation of plot.psd)
 lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
 }
 }
