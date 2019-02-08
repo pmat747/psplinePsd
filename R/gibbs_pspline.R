@@ -1,6 +1,18 @@
-#' @title Metropolis-within-Gibbs sampler for spectral inference of a stationary time series using a p-spline
-#' @description This function updates the B-spline prior using the Whittle likelihood and obtains samples from the pseudo-posterior to infer the spectral density of a stationary time series.
-#' @details The function \code{gibbs_bspline} is an implementation of the (serial version of the) MCMC algorithm presented in Edwards et al. (2018).  This algorithm uses a nonparametric B-spline prior to estimate the spectral density of a stationary time series and can be considered a generalisation of the algorithm of Choudhuri et al. (2004), which used the Bernstein polynomial prior.  A Dirichlet process prior is used to find the weights for the B-spline densities used in the finite mixture and a seperate and independent Dirichlet process prior used to place knots.  The algorithm therefore allows for a data-driven choice of the number of knots/mixtures and their locations.
+#' @title Metropolis-within-Gibbs sampler for spectral inference of a stationary time series using p-splines
+#' @description This function uses the Whittle likelihood and obtains samples from the pseudo-posterior to infer the spectral density of a stationary time series.
+#' @details The function \code{gibbs_pspline} is an implementation of the (serial version of the) MCMC algorithm presented in Edwards et al. (2018).  This algorithm uses P-splines to estimate the spectral density of a stationary time series and can be considered a particular case of the algorithm of Edwards et al. (2018), which used a B-spline prior allowing the number of B-splines functions to be variable.
+#'          We consider the prior on the spectral density given by
+#'          \deqn{f(w) = \tau \sum_{j=1}^{k}w_{j}B_{j}(w)}
+#'          where \eqn{B_{j}} is the B-spline density.  The following prior is allocated indirectly on the weights \eqn{w}:
+#'
+#'          \deqn{v|\phi \delta ~ N_{k-1}(0, (\phi D^\top D)^{-1})}
+#'
+#'          \deqn{\phi|\delta ~ Gamma(\alpha_{\phi}, \delta \beta_{\phi})}
+#'
+#'          \deqn{\delta ~ Gamma(\alpha_{\delta}, \beta_{\delta})}
+#'
+#'          where \deqn{v_{j} = \log ( \frac{w_{j}}{1-\sum_{j=1}^{k-1} w_{j}} )}.#' @param data numeric vector
+#'
 #' @param data numeric vector
 #' @param Ntotal total number of iterations to run the Markov chain
 #' @param burnin number of initial iterations to be discarded
@@ -55,6 +67,7 @@
 #' lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
 #' }
 #' @importFrom Rcpp evalCpp
+#' @useDynLib psplinePsd, .registration = TRUE
 #' @export
 gibbs_pspline <- function(data,
                           Ntotal,

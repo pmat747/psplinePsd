@@ -90,7 +90,7 @@ gibbs_pspline_postProposal <- function(data,
 
   if( add ==TRUE){
 
-    pilot_N = length(mcmc$tau);
+    pilot_N = length(psd$tau);
 
     tau[1]   <- psd$tau[pilot_N];
     delta[1] <- psd$delta[pilot_N];
@@ -296,7 +296,7 @@ gibbs_pspline_postProposal <- function(data,
   delta <- delta[keep];
   V     <- V[, keep];
   ll.trace <- ll.trace[keep];
-  
+
   V = apply(V,2, function(x) sqrt.covV %*% x + muV); # converting to actual V
 
   fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
@@ -366,12 +366,12 @@ gibbs_pspline_postProposal <- function(data,
   ###########
 
   tau_mean = mean(tau);
-  
+
   v_means = unname(apply(V, 1, mean)); # V was converted above
-  
+
   l = llike(omega, FZ, k, v = v_means,
             tau = tau_mean, pdgrm, degree, db.list)$llike;
-  
+
   ls = apply(rbind(tau, V), 2, function(x){
              llike(omega, FZ, k, v = x[-1],
              tau = x[1], pdgrm, degree, db.list)$llike});
