@@ -278,10 +278,6 @@ gibbs_pspline_simple <- function(data,
   psd.u95 <- exp(log.fpsd.s + log.Cvalue * log.fpsd.mad);
   psd.u05 <- exp(log.fpsd.s - log.Cvalue * log.fpsd.mad);
 
-  # Compute periodogram
-  N     = length(psd.median); # N = (n + 1) / 2 (ODD) or N = n / 2 + 1 (EVEN)
-  pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
-
   ###########
   ### DIC ###
   ###########
@@ -298,7 +294,21 @@ gibbs_pspline_simple <- function(data,
              tau = x[1], pdgrm, degree, db.list)$llike});
   ls = unname(ls);
 
-  DIC = -2 * (l - (2 * (l - mean(ls))));
+  # http://kylehardman.com/BlogPosts/View/6
+  # DIC = -2 * (l - (2 * (l - mean(ls))));
+
+  D_PostMean = -2 * l;
+  D_bar      = -2 * mean(ls);
+  pd         = D_bar - D_PostMean;
+
+  DIC = list(DIC = 2 * D_bar - D_PostMean, pd = pd);
+
+  # Compute periodogram
+  N     = length(psd.median); # N = (n + 1) / 2 (ODD) or N = n / 2 + 1 (EVEN)
+  pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
+
+  # storing analysis specifications
+  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ);
 
   # List to output
   output = list(psd.median = psd.median * rescale ^ 2,
@@ -308,14 +318,14 @@ gibbs_pspline_simple <- function(data,
                 psd.u05 = psd.u05 * rescale ^ 2,
                 psd.u95 = psd.u95 * rescale ^ 2,
                 fpsd.sample = fpsd.sample * rescale ^ 2,
-                k = k,
+                anSpecif = anSpecif,
+                n = n,
                 tau = tau,
                 phi = phi,
                 delta = delta,
                 V = V,
                 ll.trace = ll.trace,
                 pdgrm = pdgrm * rescale ^ 2,
-                n = n,
                 db.list = db.list,
                 DIC = DIC,
                 count = Count/k); # Acceptance probability

@@ -26,7 +26,9 @@ gibbs_pspline_postProposal <- function(data,
     cat("Posterior samples used to calibrate the proposals for the weights", "\n")
   }
 
-  k = psd$k;
+  k = psd$anSpecif$k;
+  degree = psd$anSpecif$degree;
+
   cat(paste("Number of B-splines k=", k, sep=""), "\n");
 
   if( (Ntotal - burnin)/thin < k){
@@ -51,7 +53,7 @@ gibbs_pspline_postProposal <- function(data,
 
   # Optimal rescaling to prevent numerical issues
   rescale = stats::sd(data);
-  data = data / rescale;  # Data now has standard deviation 1
+  data    = data / rescale;  # Data now has standard deviation 1
 
   if (burnin >= Ntotal) stop("burnin must be less than Ntotal")
   if (any(c(Ntotal, burnin, thin) %% 1 != 0 || any(c(Ntotal, burnin, thin) < 0)))
@@ -321,10 +323,11 @@ gibbs_pspline_postProposal <- function(data,
 
     delta = c(psd$delta, delta);
 
-    fpsd.sample = cbind(psd$fpsd.sample, fpsd.sample)
+    aux   = psd$fpsd.sample / (rescale^2);
 
-    log.fpsd.sample = cbind(apply(psd$fpsd.sample, 2, logfuller),
-                            log.fpsd.sample);
+    fpsd.sample = cbind(aux, fpsd.sample);
+
+    log.fpsd.sample = cbind(apply(aux, 2, logfuller), log.fpsd.sample);
 
     ll.trace = c(psd$ll.trace, ll.trace);
 
@@ -343,9 +346,9 @@ gibbs_pspline_postProposal <- function(data,
 
   # Compute point estimates and 90% Pointwise CIs
   psd.median <- apply(fpsd.sample, 1, stats::median);
-  psd.mean <- apply(fpsd.sample, 1, mean);
-  psd.p05 <- apply(fpsd.sample, 1, stats::quantile, probs=0.05);
-  psd.p95 <- apply(fpsd.sample, 1, stats::quantile, probs=0.95);
+  psd.mean   <- apply(fpsd.sample, 1, mean);
+  psd.p05    <- apply(fpsd.sample, 1, stats::quantile, probs=0.05);
+  psd.p95    <- apply(fpsd.sample, 1, stats::quantile, probs=0.95);
 
   # Transformed versions of these for uniform CI construction
   log.fpsd.s <- apply(log.fpsd.sample, 1, stats::median);
@@ -356,10 +359,6 @@ gibbs_pspline_postProposal <- function(data,
   # Compute Uniform CIs
   psd.u95 <- exp(log.fpsd.s + log.Cvalue * log.fpsd.mad);
   psd.u05 <- exp(log.fpsd.s - log.Cvalue * log.fpsd.mad);
-
-  # Compute periodogram
-  N     = length(psd.median); # N = (n + 1) / 2 (ODD) or N = n / 2 + 1 (EVEN)
-  pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
 
   ###########
   ### DIC ###
@@ -387,6 +386,13 @@ gibbs_pspline_postProposal <- function(data,
 
   DIC = list(DIC = 2 * D_bar - D_PostMean, pd = pd);
 
+  # Compute periodogram
+  N     = length(psd.median); # N = (n + 1) / 2 (ODD) or N = n / 2 + 1 (EVEN)
+  pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
+
+  # storing analysis specifications
+  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ);
+
   # List to output
   output = list(psd.median = psd.median * rescale ^ 2,
                 psd.mean = psd.mean * rescale ^ 2,
@@ -394,15 +400,15 @@ gibbs_pspline_postProposal <- function(data,
                 psd.p95 = psd.p95 * rescale ^ 2,
                 psd.u05 = psd.u05 * rescale ^ 2,
                 psd.u95 = psd.u95 * rescale ^ 2,
-                fpsd.sample = fpsd.sample,
-                k = k,
+                fpsd.sample = fpsd.sample * rescale ^ 2,
+                anSpecif = anSpecif,
+                n = n,
                 tau = tau,
                 phi = phi,
                 delta = delta,
                 V = V,
                 ll.trace = ll.trace,
                 pdgrm = pdgrm * rescale ^ 2,
-                n = n,
                 db.list = db.list,
                 DIC = DIC,
                 count = Count/k); # Acceptance probability

@@ -38,11 +38,11 @@ A list with S3 class 'psd' containing the following components:
    \item{psd.p05,psd.p95}{90\% pointwise credibility interval}
    \item{psd.u05,psd.u95}{90\% uniform credibility interval}
    \item{fpsd.sample}{posterior power spectral density estimates}
-   \item{k}{number of B-splines}
+   \item{anSpecif}{a list with some of the specifications of the analysis}
+   \item{n}{integer length of input time series}
    \item{tau,phi,delta,V}{posterior traces of model parameters}
    \item{ll.trace}{trace of log likelihood}
    \item{pdgrm}{periodogram}
-   \item{n}{integer length of input time series}
    \item{db.list}{posterior spectral density estimates}
    \item{DIC}{deviance information criterion}
    \item{count}{acceptance probabilities for the weigths}
@@ -67,7 +67,7 @@ The function \code{gibbs_pspline} is an implementation of the (serial version of
 \examples{
 \dontrun{
 
-set.seed(123456)
+set.seed(1)
 
 # Generate AR(1) data with rho = 0.9
 n = 128
@@ -75,18 +75,21 @@ data = arima.sim(n, model = list(ar = 0.9))
 data = data - mean(data)
 
 # Run MCMC (may take some time)
-# pilot run
-pilotmcmc = gibbs_pspline(data, 2500, 500);
+
+#' pilotmcmc = gibbs_pspline(data, 2500, 500); # pilot run
 mcmc1 = gibbs_pspline(data, 3000, 2000, psd = pilotmcmc);
 mcmc2 = gibbs_pspline(data, 3000, 0, psd = mcmc1, add = TRUE); # reciclying mcmc1 samples
+
 require(beyondWhittle)  # For psd_arma() function
 freq = 2 * pi / n * (1:(n / 2 + 1) - 1)[-c(1, n / 2 + 1)]  # Remove first and last frequency
 psd.true = psd_arma(freq, ar = 0.9, ma = numeric(0), sigma2 = 1)  # True PSD
+
 plot(mcmc1)  # Plot log PSD (see documentation of plot.psd)
 lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
 
 plot(mcmc2)  # Plot log PSD (see documentation of plot.psd)
 lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
+
 }
 }
 \references{

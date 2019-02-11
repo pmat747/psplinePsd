@@ -14,17 +14,13 @@ postprocess(x, burnin, thin = 1)
 \item{thin}{thinning number (post-processing)}
 }
 \value{
-A list with S3 class 'psd' containing the following components:
+A list with S3 class 'psd' containing the following updated components:
    \item{psd.median,psd.mean}{psd estimates: (pointwise) posterior median and mean}
    \item{psd.p05,psd.p95}{90\% pointwise credibility interval}
    \item{psd.u05,psd.u95}{90\% uniform credibility interval}
-   \item{fpsd.sample}{posterior power spectral density estimates}
-   \item{k}{number of B-splines}
+   \item{fpsd.sample}{posterior power spectral density estimates}#'
    \item{tau,phi,delta,V}{posterior traces of model parameters}
    \item{ll.trace}{trace of log likelihood}
-   \item{pdgrm}{periodogram}
-   \item{n}{integer length of input time series}
-   \item{db.list}{posterior spectral density estimates}
    \item{DIC}{deviance information criterion}
    \item{count}{acceptance probabilities for the weigths}
 }
@@ -33,21 +29,24 @@ This function allows to discard a specified number of samples as burn-in period 
 }
 \examples{
 \dontrun{
-set.seed(123456)
+
+set.seed(1)
 
 # Generate AR(1) data with rho = 0.9
-n = 128
-data = arima.sim(n, model = list(ar = 0.9))
-data = data - mean(data)
+n = 128;
+data = arima.sim(n, model = list(ar = 0.9));
+data = data - mean(data);
 
 # Run MCMC (may take some time)
-mcmc = gibbs_pspline(data, 5000, 0)
-mcmc = burnin(mcmc, burnin = 500, thin = 10)
+mcmc = gibbs_pspline(data, 5000, 0);
+mcmc = burnin(mcmc, burnin = 500, thin = 10);
+
 require(beyondWhittle)  # For psd_arma() function
 freq = 2 * pi / n * (1:(n / 2 + 1) - 1)[-c(1, n / 2 + 1)]  # Remove first and last frequency
 psd.true = psd_arma(freq, ar = 0.9, ma = numeric(0), sigma2 = 1)  # True PSD
 plot(mcmc)  # Plot log PSD (see documentation of plot.psd)
 lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
+
 }
 }
 \references{

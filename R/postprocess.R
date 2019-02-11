@@ -3,17 +3,13 @@
 #' @param x a psd object
 #' @param burnin number of initial iterations to be discarded
 #' @param thin thinning number (post-processing)
-#' @return A list with S3 class 'psd' containing the following components:
+#' @return A list with S3 class 'psd' containing the following updated components:
 #'    \item{psd.median,psd.mean}{psd estimates: (pointwise) posterior median and mean}
 #'    \item{psd.p05,psd.p95}{90\% pointwise credibility interval}
 #'    \item{psd.u05,psd.u95}{90\% uniform credibility interval}
-#'    \item{fpsd.sample}{posterior power spectral density estimates}
-#'    \item{k}{number of B-splines}
+#'    \item{fpsd.sample}{posterior power spectral density estimates}#'
 #'    \item{tau,phi,delta,V}{posterior traces of model parameters}
 #'    \item{ll.trace}{trace of log likelihood}
-#'    \item{pdgrm}{periodogram}
-#'    \item{n}{integer length of input time series}
-#'    \item{db.list}{posterior spectral density estimates}
 #'    \item{DIC}{deviance information criterion}
 #'    \item{count}{acceptance probabilities for the weigths}
 #' @seealso \link{plot.psd}
@@ -23,21 +19,24 @@
 #'
 #' @examples
 #' \dontrun{
-#' set.seed(123456)
+#'
+#' set.seed(1)
 #'
 #' # Generate AR(1) data with rho = 0.9
-#' n = 128
-#' data = arima.sim(n, model = list(ar = 0.9))
-#' data = data - mean(data)
+#' n = 128;
+#' data = arima.sim(n, model = list(ar = 0.9));
+#' data = data - mean(data);
 #'
 #' # Run MCMC (may take some time)
-#' mcmc = gibbs_pspline(data, 5000, 0)
-#' mcmc = burnin(mcmc, burnin = 500, thin = 10)
+#' mcmc = gibbs_pspline(data, 5000, 0);
+#' mcmc = burnin(mcmc, burnin = 500, thin = 10);
+#'
 #' require(beyondWhittle)  # For psd_arma() function
 #' freq = 2 * pi / n * (1:(n / 2 + 1) - 1)[-c(1, n / 2 + 1)]  # Remove first and last frequency
 #' psd.true = psd_arma(freq, ar = 0.9, ma = numeric(0), sigma2 = 1)  # True PSD
 #' plot(mcmc)  # Plot log PSD (see documentation of plot.psd)
 #' lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
+#'
 #' }
 #' @export
 postprocess = function(x, burnin, thin = 1){
@@ -76,28 +75,61 @@ postprocess = function(x, burnin, thin = 1){
   psd.u95 <- exp(log.fpsd.s + log.Cvalue * log.fpsd.mad);
   psd.u05 <- exp(log.fpsd.s - log.Cvalue * log.fpsd.mad);
 
-  output = list(psd.median = psd.median,
-                psd.mean   = psd.mean,
-                psd.p05    = psd.p05,
-                psd.p95 = psd.p95,
-                psd.u05 = psd.u05,
-                psd.u95 = psd.u95,
-                fpsd.sample = fpsd.sample,
-                k = x$k,
-                tau = x$tau[index],
-                phi = x$phi[index],
-                delta = x$delta[index],
-                V = x$V[, index],
-                ll.trace = x$ll.trace[index],
-                pdgrm = x$pdgrm,
-                n = x$n,
-                db.list = x$db.list,
-                DIC = x$DIC,
-                count = x$count[index]);
+  # parameters
 
-  class(output) = "psd"  # Assign S3 class to object
+  tau = x$tau[index];
+  V   = x$V[, index];
 
-  return(output);
+  ###########
+  ### DIC ###
+  ###########
+
+  # anSpecif$FZ: fast_ft(data);# FFT data to frequency domain. NOTE: Must be mean-centred.
+  FZ    <- x$anSpecif$FZ;
+  pdgrm <- abs(FZ) ^ 2; # Periodogram: NOTE: the length is n here.
+  omega <- 2 * (1:(x$anSpecif$n / 2 + 1) - 1) / x$anSpecif$n;  # Frequencies on unit interva
+
+  tau_mean = mean(tau);
+
+  v_means = unname(apply(V, 1, mean));
+
+  l = llike(omega, FZ, x$anSpecif$k, v = v_means,
+            tau = tau_mean, pdgrm, x$anSpecif$degree, x$db.list)$llike;
+
+  ls = apply(rbind(tau, V), 2, function(y){
+             llike(omega, FZ, x$anSpecif$k, v = y[-1],
+             tau = y[1], pdgrm, x$anSpecif$degree, x$db.list)$llike});
+  ls = unname(ls);
+
+  # http://kylehardman.com/BlogPosts/View/6
+  # DIC = -2 * (l - (2 * (l - mean(ls))));
+
+  D_PostMean = -2 * l;
+  D_bar      = -2 * mean(ls);
+  pd         = D_bar - D_PostMean;
+
+  DIC = list(DIC = 2 * D_bar - D_PostMean, pd = pd);
+
+  x[["psd.median"]] = psd.median;
+  x[["psd.mean"]]   = psd.mean;
+  x[["psd.p05"]]    = psd.p05;
+  x[["psd.p95"]]    = psd.p95;
+  x[["psd.u05"]]    = psd.u05;
+  x[["psd.u95"]]    = psd.u95;
+  x[["fpsd.sample"]]= fpsd.sample;
+  #x[["k"]]          = x$k;
+  x[["tau"]]        = tau; # defined above
+  x[["phi"]]        = x$phi[index];
+  x[["delta"]]      = x$delta[index];
+  x[["V"]]          = V; # defined above
+  x[["ll.trace"]]   = x$ll.trace[index];
+  #x[["pdgrm"]]      = x$pdgrm;
+  #x[["n"]]          = x$n;
+  #x[["db.list"]]    = x$db.list;
+  x[["DIC"]]        = DIC;
+  x[["count"]]      = x$count[index];
+
+  return(x);
 
 }
 
