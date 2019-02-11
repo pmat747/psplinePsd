@@ -7,7 +7,7 @@
 gibbs_pspline(data, Ntotal, burnin, thin = 1, tau.alpha = 0.001,
   tau.beta = 0.001, phi.alpha = 1, phi.beta = 1e-05,
   delta.alpha = 1, delta.beta = 1, k = NULL, degree = 3,
-  psd = NULL, add = FALSE)
+  diffMatrixOrder = 3, psd = NULL, add = FALSE)
 }
 \arguments{
 \item{data}{numeric vector}
@@ -27,6 +27,8 @@ gibbs_pspline(data, Ntotal, burnin, thin = 1, tau.alpha = 0.001,
 \item{k}{number of B-splines}
 
 \item{degree}{positive integer specifying the degree of the B-spline densities (default is 3)}
+
+\item{diffMatrixOrder}{order of the difference penalty matrix (2 or 3)}
 
 \item{psd}{output from \code{gibbs_pspline} function}
 
@@ -74,9 +76,8 @@ n = 128
 data = arima.sim(n, model = list(ar = 0.9))
 data = data - mean(data)
 
-# Run MCMC (may take some time)
-
-#' pilotmcmc = gibbs_pspline(data, 2500, 500); # pilot run
+# Run MCMC (may take some time)#'
+pilotmcmc = gibbs_pspline(data, 2500, 500); # pilot run
 mcmc1 = gibbs_pspline(data, 3000, 2000, psd = pilotmcmc);
 mcmc2 = gibbs_pspline(data, 3000, 0, psd = mcmc1, add = TRUE); # reciclying mcmc1 samples
 

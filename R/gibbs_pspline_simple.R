@@ -15,13 +15,18 @@ gibbs_pspline_simple <- function(data,
                                  delta.alpha = 1,
                                  delta.beta = 1,
                                  k = NULL,
-                                 degree = 3) {
+                                 degree = 3,
+                                 diffMatrixOrder = 3) {
 
   n <- length(data);
 
   if(is.null(k)){
     k = min(round(n/4), 40);
     cat(paste("Number of B-splines k=", k, sep=""), "\n");
+  }
+
+  if(!any(diffMatrixOrder == c(2,3))){
+    stop("The order of the difference penalty matrix can only be 2 or 3")
   }
 
   if (n %% 2 != 0) stop("this version of bsplinePsd must have n even")
@@ -59,7 +64,7 @@ gibbs_pspline_simple <- function(data,
   delta <- rep(NA, Ntotal);
 
   # Difference Matrix
-  P       = diffMatrix(k-1, d = 3); # Third order penalty
+  P       = diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
   P       = t(P) %*% P;
   epsilon = 1e-6; #1e-6;
   P       = P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)

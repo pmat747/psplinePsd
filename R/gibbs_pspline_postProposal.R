@@ -15,6 +15,7 @@ gibbs_pspline_postProposal <- function(data,
                                        delta.beta,
                                        k = NULL,
                                        degree = 3,
+                                       diffMatrixOrder = 3,
                                        psd,
                                        add = FALSE) {
 
@@ -37,6 +38,10 @@ gibbs_pspline_postProposal <- function(data,
   }
 
   ### ###
+
+  if(!any(diffMatrixOrder == c(2,3))){
+    stop("The order of the difference penalty matrix can only be 2 or 3")
+  }
 
   n <- length(data);
 
@@ -74,7 +79,7 @@ gibbs_pspline_postProposal <- function(data,
   delta <- rep(NA, Ntotal);
 
   # Difference Matrix
-  P       = diffMatrix(k-1, d = 3); # Third order penalty
+  P       = diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
   P       = t(P) %*% P;
   epsilon = 1e-6; #1e-10;
   P       = P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)

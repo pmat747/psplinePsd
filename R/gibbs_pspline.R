@@ -22,6 +22,7 @@
 #' @param delta.alpha,delta.beta prior parameters for delta (Gamma), which is a factor of the shape hyperparameter in the Gamma prior for tau
 #' @param k number of B-splines
 #' @param degree positive integer specifying the degree of the B-spline densities (default is 3)
+#' @param diffMatrixOrder  order of the difference penalty matrix (2 or 3)
 #' @param psd output from \code{gibbs_pspline} function
 #' @param add logical value indicating wether to add pilot posterior samples "psd" to the current analysis
 #' @return A list with S3 class 'psd' containing the following components:
@@ -83,6 +84,7 @@ gibbs_pspline <- function(data,
                           delta.beta = 1,
                           k = NULL,
                           degree = 3,
+                          diffMatrixOrder = 3,
                           psd = NULL,
                           add = FALSE) {
 
@@ -99,7 +101,8 @@ gibbs_pspline <- function(data,
                                delta.alpha = delta.alpha,
                                delta.beta = delta.beta,
                                k = k,
-                               degree = degree);
+                               degree = degree,
+                               diffMatrixOrder = diffMatrixOrder);
 
   }else{
 
@@ -115,6 +118,7 @@ gibbs_pspline <- function(data,
                                      delta.beta = delta.beta,
                                      k = k,
                                      degree = degree,
+                                     diffMatrixOrder = diffMatrixOrder,
                                      psd = psd,
                                      add = add);
   }
