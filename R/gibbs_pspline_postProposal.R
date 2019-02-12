@@ -2,6 +2,9 @@
 #'   the proposals for the weights
 #'
 #' @importFrom Rcpp evalCpp
+#' @importFrom expm sqrtm
+#' @importFrom stats median rnorm runif rgamma
+#' @useDynLib psplinePsd, .registration = TRUE
 #' @keywords internal
 gibbs_pspline_postProposal <- function(data,
                                        Ntotal,
@@ -39,8 +42,8 @@ gibbs_pspline_postProposal <- function(data,
 
   ### ###
 
-  if(!any(diffMatrixOrder == c(2,3))){
-    stop("The order of the difference penalty matrix can only be 2 or 3")
+  if(!any(diffMatrixOrder == c(1,2,3))){
+    stop("The order of the difference penalty matrix can only be 1, 2 or 3")
   }
 
   n <- length(data);

@@ -114,6 +114,7 @@ logplusvec = function(x){
   return(r);
 }
 
+#' log-prior
 #' @keywords internal
 lprior = function (k, v, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta,
                    delta, delta.alpha, delta.beta, P)

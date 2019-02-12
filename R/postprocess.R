@@ -7,7 +7,7 @@
 #'    \item{psd.median,psd.mean}{psd estimates: (pointwise) posterior median and mean}
 #'    \item{psd.p05,psd.p95}{90\% pointwise credibility interval}
 #'    \item{psd.u05,psd.u95}{90\% uniform credibility interval}
-#'    \item{fpsd.sample}{posterior power spectral density estimates}#'
+#'    \item{fpsd.sample}{posterior power spectral density estimates}
 #'    \item{tau,phi,delta,V}{posterior traces of model parameters}
 #'    \item{ll.trace}{trace of log likelihood}
 #'    \item{DIC}{deviance information criterion}

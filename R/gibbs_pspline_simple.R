@@ -25,8 +25,8 @@ gibbs_pspline_simple <- function(data,
     cat(paste("Number of B-splines k=", k, sep=""), "\n");
   }
 
-  if(!any(diffMatrixOrder == c(2,3))){
-    stop("The order of the difference penalty matrix can only be 2 or 3")
+  if(!any(diffMatrixOrder == c(1,2,3))){
+    stop("The order of the difference penalty matrix can only be 1, 2 or 3")
   }
 
   if (n %% 2 != 0) stop("this version of bsplinePsd must have n even")

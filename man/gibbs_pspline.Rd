@@ -28,7 +28,7 @@ gibbs_pspline(data, Ntotal, burnin, thin = 1, tau.alpha = 0.001,
 
 \item{degree}{positive integer specifying the degree of the B-spline densities (default is 3)}
 
-\item{diffMatrixOrder}{order of the difference penalty matrix (2 or 3)}
+\item{diffMatrixOrder}{order of the difference penalty matrix (1, 2 or 3)}
 
 \item{psd}{output from \code{gibbs_pspline} function}
 
@@ -39,13 +39,13 @@ A list with S3 class 'psd' containing the following components:
    \item{psd.median,psd.mean}{psd estimates: (pointwise) posterior median and mean}
    \item{psd.p05,psd.p95}{90\% pointwise credibility interval}
    \item{psd.u05,psd.u95}{90\% uniform credibility interval}
-   \item{fpsd.sample}{posterior power spectral density estimates}
+   \item{fpsd.sample}{posterior spectral density estimates}
    \item{anSpecif}{a list with some of the specifications of the analysis}
    \item{n}{integer length of input time series}
    \item{tau,phi,delta,V}{posterior traces of model parameters}
    \item{ll.trace}{trace of log likelihood}
    \item{pdgrm}{periodogram}
-   \item{db.list}{posterior spectral density estimates}
+   \item{db.list}{B-spline densities}
    \item{DIC}{deviance information criterion}
    \item{count}{acceptance probabilities for the weigths}
 }
@@ -64,7 +64,7 @@ The function \code{gibbs_pspline} is an implementation of the (serial version of
 
          \deqn{\delta ~ Gamma(\alpha_{\delta}, \beta_{\delta})}
 
-         where \deqn{v_{j} = \log ( \frac{w_{j}}{1-\sum_{j=1}^{k-1} w_{j}} )}.#' @param data numeric vector
+         where \deqn{v_{j} = \log ( \frac{w_{j}}{1-\sum_{j=1}^{k-1} w_{j}} )}.
 }
 \examples{
 \dontrun{
