@@ -1,30 +1,20 @@
-#' Difference Matrix. It works for second & third order penalties
+#' diffMatrix calculates the difference penalty matrix
+#' The third order difference penalty matrix is difference from the one
+#' produced by the other functions.  However, the penalty matrix t(D)%*%D
+#' remains the same
 #' @keywords internal
 diffMatrix = function(k, d = 2){
 
-  if(k<1)stop("k must be greater than 0")
+  if( (d<1) || (d %% 1 != 0) )stop("d must be a positive integer value");
+  if( (k<1) || (k %% 1 != 0) )stop("k must be a positive integer value");
+  if(d >= k)stop("d must be lower than k");
 
-  if(d == 1){
+  out = diag(k);
 
-    x = c(-1, 1, rep(c(rep(0, k-1), -1, 1), k-2));
-    x = matrix(x, ncol = k, byrow = TRUE);
-    return(x)
+  for(i in 1:d){
 
-  }else if(d == 2){
-
-    x = c(1,-2,1, rep(c(rep(0, k-2), 1,-2,1), k-3));
-    x = matrix(x, ncol = k, byrow = TRUE);
-    return(x);
-
-  }else if(d == 3){
-
-    x = c(1, -3, 3, -1, rep(c(rep(0, k-3), 1,-3,3,-1), k-4));
-    x = matrix(x, ncol = k, byrow = TRUE);
-    return(x);
-
-  }else{
-
-    stop("diffMatrix has been defined for d = 1, 2 and 3");
+    out = diff(out);
 
   }
+  return(out)
 }

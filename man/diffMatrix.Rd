@@ -2,11 +2,17 @@
 % Please edit documentation in R/otherFunctions.R
 \name{diffMatrix}
 \alias{diffMatrix}
-\title{Difference Matrix. It works for second & third order penalties}
+\title{diffMatrix calculates the difference penalty matrix
+The third order difference penalty matrix is difference from the one
+produced by the other functions.  However, the penalty matrix t(D)%*%D
+remains the same}
 \usage{
 diffMatrix(k, d = 2)
 }
 \description{
-Difference Matrix. It works for second & third order penalties
+diffMatrix calculates the difference penalty matrix
+The third order difference penalty matrix is difference from the one
+produced by the other functions.  However, the penalty matrix t(D)%*%D
+remains the same
 }
 \keyword{internal}

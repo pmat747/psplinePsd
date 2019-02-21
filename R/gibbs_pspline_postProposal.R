@@ -13,12 +13,13 @@ gibbs_pspline_postProposal <- function(data,
                                        tau.alpha = 0.001,
                                        tau.beta = 0.001,
                                        phi.alpha = 1,
-                                       phi.beta = 1e-5,
-                                       delta.alpha,
-                                       delta.beta,
+                                       phi.beta = 1,
+                                       delta.alpha = 1e-04,
+                                       delta.beta = 1e-04,
                                        k = NULL,
                                        degree = 3,
                                        diffMatrixOrder = 3,
+                                       printIter = 100,
                                        psd,
                                        add = FALSE) {
 
@@ -42,11 +43,9 @@ gibbs_pspline_postProposal <- function(data,
 
   ### ###
 
-  if(!any(diffMatrixOrder == c(1,2,3))){
-    stop("The order of the difference penalty matrix can only be 1, 2 or 3")
-  }
-
   n <- length(data);
+
+  if( (printIter<=0) || (printIter %% 1 != 0) )stop("printIter must be a positive integer value");
 
   if (n %% 2 != 0) stop("this version of bsplinePsd must have n even")
 
@@ -131,7 +130,7 @@ gibbs_pspline_postProposal <- function(data,
   # Store log likelihood
   ll.trace    <- rep(NA, Ntotal)
   ll.trace[1] <- llike(omega, FZ, k, sqrt.covV %*% V[, 1] + muV,
-                       tau[1], pdgrm, degree, db.list)$llike
+                       tau[1], pdgrm, degree, db.list);
 
   Count    = NULL; # acceptance probability
   sigma    = 1;    # variance of proposal distb for weights
@@ -150,7 +149,7 @@ gibbs_pspline_postProposal <- function(data,
   # Metropolis-within-Gibbs sampler
   for (i in 1:(Ntotal-1)) {
 
-    if (i %% 100 == 0) {
+    if (i %% printIter == 0) {
       cat(paste("Iteration", i, ",", "Time elapsed",
                 round(as.numeric(proc.time()[1] - ptime) / 60, 2),
                 "minutes"), "\n")
@@ -158,25 +157,23 @@ gibbs_pspline_postProposal <- function(data,
 
     v = sqrt.covV %*% V[, i] + muV;
 
-    lp.list <- lpost(omega,
-                     FZ,
-                     k,
-                     v,
-                     tau[i],
-                     tau.alpha,
-                     tau.beta,
-                     phi[i],
-                     phi.alpha,
-                     phi.beta,
-                     delta[i],
-                     delta.alpha,
-                     delta.beta,
-                     P,
-                     pdgrm,
-                     degree,
-                     db.list)
-
-    f.store <- lp.list$lp;
+    f.store  <- lpost(omega,
+                      FZ,
+                      k,
+                      v,
+                      tau[i],
+                      tau.alpha,
+                      tau.beta,
+                      phi[i],
+                      phi.alpha,
+                      phi.beta,
+                      delta[i],
+                      delta.alpha,
+                      delta.beta,
+                      P,
+                      pdgrm,
+                      degree,
+                      db.list)
 
     ##############
     ### WEIGHT ###
@@ -212,25 +209,23 @@ gibbs_pspline_postProposal <- function(data,
 
       v = sqrt.covV %*% V.star + muV;
 
-      lp.list <- lpost(omega,
-                       FZ,
-                       k,
-                       v, # proposal value
-                       tau[i],
-                       tau.alpha,
-                       tau.beta,
-                       phi[i],
-                       phi.alpha,
-                       phi.beta,
-                       delta[i],
-                       delta.alpha,
-                       delta.beta,
-                       P,
-                       pdgrm,
-                       degree,
-                       db.list)
-
-      f.V.star <- lp.list$lp;
+      f.V.star <- lpost(omega,
+                        FZ,
+                        k,
+                        v, # proposal value
+                        tau[i],
+                        tau.alpha,
+                        tau.beta,
+                        phi[i],
+                        phi.alpha,
+                        phi.beta,
+                        delta[i],
+                        delta.alpha,
+                        delta.beta,
+                        P,
+                        pdgrm,
+                        degree,
+                        db.list)
 
       # log posterior for previous iteration
       f.V <- f.store;
@@ -295,7 +290,7 @@ gibbs_pspline_postProposal <- function(data,
     ##############################
 
     ll.trace[i + 1] <- llike(omega, FZ, k, v, tau[i + 1], pdgrm,
-                             degree, db.list)$llike;
+                             degree, db.list);
 
   } # END: MCMC loop
 
@@ -377,11 +372,11 @@ gibbs_pspline_postProposal <- function(data,
   v_means = unname(apply(V, 1, mean)); # V was converted above
 
   l = llike(omega, FZ, k, v = v_means,
-            tau = tau_mean, pdgrm, degree, db.list)$llike;
+            tau = tau_mean, pdgrm, degree, db.list);
 
   ls = apply(rbind(tau, V), 2, function(x){
              llike(omega, FZ, k, v = x[-1],
-             tau = x[1], pdgrm, degree, db.list)$llike});
+             tau = x[1], pdgrm, degree, db.list)});
 
   ls = unname(ls);
 
@@ -419,7 +414,7 @@ gibbs_pspline_postProposal <- function(data,
                 pdgrm = pdgrm * rescale ^ 2,
                 db.list = db.list,
                 DIC = DIC,
-                count = Count/k); # Acceptance probability
+                count = Count); # Acceptance probability
 
   class(output) = "psd"  # Assign S3 class to object
 

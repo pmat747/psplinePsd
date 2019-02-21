@@ -11,12 +11,13 @@ gibbs_pspline_simple <- function(data,
                                  tau.alpha = 0.001,
                                  tau.beta = 0.001,
                                  phi.alpha = 1,
-                                 phi.beta = 1e-5,
-                                 delta.alpha = 1,
-                                 delta.beta = 1,
+                                 phi.beta = 1,
+                                 delta.alpha = 1e-04,
+                                 delta.beta = 1e-04,
                                  k = NULL,
                                  degree = 3,
-                                 diffMatrixOrder = 3) {
+                                 diffMatrixOrder = 3,
+                                 printIter = 100) {
 
   n <- length(data);
 
@@ -25,9 +26,7 @@ gibbs_pspline_simple <- function(data,
     cat(paste("Number of B-splines k=", k, sep=""), "\n");
   }
 
-  if(!any(diffMatrixOrder == c(1,2,3))){
-    stop("The order of the difference penalty matrix can only be 1, 2 or 3")
-  }
+  if( (printIter<=0) || (printIter %% 1 != 0) )stop("printIter must be a positive integer value");
 
   if (n %% 2 != 0) stop("this version of bsplinePsd must have n even")
   if( (Ntotal - burnin)/thin < k){stop("Change corresponding specifications in order to have (Ntotal-burnin)/thin > k")}
@@ -96,24 +95,31 @@ gibbs_pspline_simple <- function(data,
   # Store log likelihood
   ll.trace    <- rep(NA, Ntotal);
   ll.trace[1] <- llike(omega, FZ, k, V[, 1], tau[1], pdgrm, degree,
-                       db.list)$llike;
+                       db.list);
 
   Count = NULL; # ACCEPTANCE PROBABILITY
   sigma = 1;    # variance of proposal distb for weights
   count = 0.4;  # starting value for acc pbb - optimal value
+  k1    = k - 1;
+
+  # Random values
+  Zs = stats::rnorm((Ntotal-1)*k1);
+  Zs = matrix(Zs, nrow = Ntotal-1, ncol = k1);
+  Us = log(stats::runif((Ntotal-1)*k1, 0, 1));
+  Us = matrix(Us, nrow = Ntotal-1, ncol = k1);
 
   ptime = proc.time()[1]
 
   # Metropolis-within-Gibbs sampler
   for (i in 1:(Ntotal-1)) {
 
-    if (i %% 100 == 0) {
+    if (i %% printIter == 0) {
       cat(paste("Iteration", i, ",", "Time elapsed",
                   round(as.numeric(proc.time()[1] - ptime) / 60, 2),
                   "minutes"), "\n")
     }
 
-    lp.list <- lpost(omega,
+    f.store <- lpost(omega,
                      FZ,
                      k,
                      V[, i],
@@ -131,8 +137,6 @@ gibbs_pspline_simple <- function(data,
                      degree,
                      db.list)
 
-    f.store <- lp.list$lp
-
     ##############
     ### WEIGHT ###
     ##############
@@ -141,10 +145,9 @@ gibbs_pspline_simple <- function(data,
 
     V.star  = V.store;
 
-    aux     = sample(k-1);
+    aux     = sample(k1);
 
     # tunning proposal distribution
-    count   = count/k;
 
     if(count < 0.30){ # increasing acceptance pbb
 
@@ -158,31 +161,29 @@ gibbs_pspline_simple <- function(data,
 
     count = 0; # ACCEPTANCE PROBABILITY
 
-    for(j in 1:k){
+    for(j in 1:k1){
 
       pos         = aux[j];
 
-      V.star[pos] = V.store[pos] + stats::rnorm(1, sd = sigma); # 0.1
+      V.star[pos] = V.store[pos] + Zs[i,j];
 
-      lp.list <- lpost(omega,
-                       FZ,
-                       k,
-                       V.star, # proposal value
-                       tau[i],
-                       tau.alpha,
-                       tau.beta,
-                       phi[i],
-                       phi.alpha,
-                       phi.beta,
-                       delta[i],
-                       delta.alpha,
-                       delta.beta,
-                       P,
-                       pdgrm,
-                       degree,
-                       db.list)
-
-      f.V.star <- lp.list$lp;
+      f.V.star <- lpost(omega,
+                        FZ,
+                        k,
+                        V.star, # proposal value
+                        tau[i],
+                        tau.alpha,
+                        tau.beta,
+                        phi[i],
+                        phi.alpha,
+                        phi.beta,
+                        delta[i],
+                        delta.alpha,
+                        delta.beta,
+                        P,
+                        pdgrm,
+                        degree,
+                        db.list)
 
       # log posterior for previous iteration
       f.V <- f.store;
@@ -191,7 +192,7 @@ gibbs_pspline_simple <- function(data,
 
       alpha1 <- min(0, f.V.star - f.V); # log acceptance ratio
 
-      if(log(stats::runif(1, 0, 1)) < alpha1) {
+      if(Us[i,j] < alpha1) {
 
         V.store[pos] <- V.star[pos];  # Accept W.star
         f.store      <- f.V.star;
@@ -206,6 +207,7 @@ gibbs_pspline_simple <- function(data,
     } # End updating weights
 
     V = cbind(V, V.store);
+    count    = count / k1;
     Count[i] = count; # Acceptance probability
 
     ###########
@@ -244,7 +246,7 @@ gibbs_pspline_simple <- function(data,
     ##############################
 
     ll.trace[i + 1] <- llike(omega, FZ, k, V[, i + 1], tau[i + 1], pdgrm,
-                             degree, db.list)$llike;
+                             degree, db.list);
 
   }  # END: MCMC loop
 
@@ -292,11 +294,11 @@ gibbs_pspline_simple <- function(data,
   v_means = unname(apply(V, 1, mean));
 
   l = llike(omega, FZ, k, v = v_means,
-            tau = tau_mean, pdgrm, degree, db.list)$llike;
+            tau = tau_mean, pdgrm, degree, db.list);
 
   ls = apply(rbind(tau, V), 2, function(x){
              llike(omega, FZ, k, v = x[-1],
-             tau = x[1], pdgrm, degree, db.list)$llike});
+             tau = x[1], pdgrm, degree, db.list)});
   ls = unname(ls);
 
   # http://kylehardman.com/BlogPosts/View/6
@@ -333,7 +335,7 @@ gibbs_pspline_simple <- function(data,
                 pdgrm = pdgrm * rescale ^ 2,
                 db.list = db.list,
                 DIC = DIC,
-                count = Count/k); # Acceptance probability
+                count = Count); # Acceptance probability
 
   class(output) = "psd"  # Assign S3 class to object
 

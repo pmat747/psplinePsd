@@ -147,7 +147,7 @@ llike = function (omega, FZ, k, v, tau, pdgrm, degree, db.list)
                                                              1) + 1]
   f <- tau * q
   llike <- -sum(log(f) + pdgrm[2:(n - 1)]/(f * 2 * pi))/2
-  return(list(llike = llike, db.list = qq.psd$db.list))
+  return(llike)
 }
 
 #' Unnormalised log posterior
@@ -158,8 +158,8 @@ lpost = function (omega, FZ, k, v, tau, tau.alpha, tau.beta,
 {
   ll <- llike(omega, FZ, k, v, tau, pdgrm, degree, db.list)
 
-  lp <- ll$llike + lprior(k, v, tau, tau.alpha, tau.beta, phi,
-                          phi.alpha, phi.beta, delta, delta.alpha, delta.beta, P)
+  lp <- ll + lprior(k, v, tau, tau.alpha, tau.beta, phi,
+                    phi.alpha, phi.beta, delta, delta.alpha, delta.beta, P)
 
-  return(list(lp = lp, db.list = ll$db.list))
+  return(lp)
 }

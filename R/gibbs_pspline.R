@@ -22,6 +22,7 @@
 #' @param k number of B-splines
 #' @param degree positive integer specifying the degree of the B-spline densities (default is 3)
 #' @param diffMatrixOrder  order of the difference penalty matrix (1, 2 or 3)
+#' @param printIter print periodically on screen the iteration number
 #' @param psd output from \code{gibbs_pspline} function
 #' @param add logical value indicating wether to add pilot posterior samples "psd" to the current analysis
 #' @return A list with S3 class 'psd' containing the following components:
@@ -78,12 +79,13 @@ gibbs_pspline <- function(data,
                           tau.alpha = 0.001,
                           tau.beta = 0.001,
                           phi.alpha = 1,
-                          phi.beta = 1e-5,
-                          delta.alpha = 1,
-                          delta.beta = 1,
+                          phi.beta = 1,
+                          delta.alpha = 1e-04,
+                          delta.beta = 1e-04,
                           k = NULL,
                           degree = 3,
                           diffMatrixOrder = 3,
+                          printIter = 100,
                           psd = NULL,
                           add = FALSE) {
 
@@ -101,7 +103,8 @@ gibbs_pspline <- function(data,
                                delta.beta = delta.beta,
                                k = k,
                                degree = degree,
-                               diffMatrixOrder = diffMatrixOrder);
+                               diffMatrixOrder = diffMatrixOrder,
+                               printIter = printIter);
 
   }else{
 
@@ -118,6 +121,7 @@ gibbs_pspline <- function(data,
                                      k = k,
                                      degree = degree,
                                      diffMatrixOrder = diffMatrixOrder,
+                                     printIter = printIter,
                                      psd = psd,
                                      add = add);
   }

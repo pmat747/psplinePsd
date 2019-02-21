@@ -6,9 +6,9 @@
   the proposals for the weights}
 \usage{
 gibbs_pspline_postProposal(data, Ntotal, burnin, thin = 1,
-  tau.alpha = 0.001, tau.beta = 0.001, phi.alpha = 1,
-  phi.beta = 1e-05, delta.alpha, delta.beta, k = NULL, degree = 3,
-  diffMatrixOrder = 3, psd, add = FALSE)
+  tau.alpha = 0.001, tau.beta = 0.001, phi.alpha = 1, phi.beta = 1,
+  delta.alpha = 1e-04, delta.beta = 1e-04, k = NULL, degree = 3,
+  diffMatrixOrder = 3, printIter = 100, psd, add = FALSE)
 }
 \description{
 This function takes into account a posterior pilot sample to calibrate

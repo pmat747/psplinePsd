@@ -5,9 +5,9 @@
 \title{This function does not need a posterior pilot sample}
 \usage{
 gibbs_pspline_simple(data, Ntotal, burnin, thin = 1, tau.alpha = 0.001,
-  tau.beta = 0.001, phi.alpha = 1, phi.beta = 1e-05,
-  delta.alpha = 1, delta.beta = 1, k = NULL, degree = 3,
-  diffMatrixOrder = 3)
+  tau.beta = 0.001, phi.alpha = 1, phi.beta = 1,
+  delta.alpha = 1e-04, delta.beta = 1e-04, k = NULL, degree = 3,
+  diffMatrixOrder = 3, printIter = 100)
 }
 \description{
 This function does not need a posterior pilot sample
