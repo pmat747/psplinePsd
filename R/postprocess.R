@@ -94,11 +94,11 @@ postprocess = function(x, burnin, thin = 1){
   v_means = unname(apply(V, 1, mean));
 
   l = llike(omega, FZ, x$anSpecif$k, v = v_means,
-            tau = tau_mean, pdgrm, x$anSpecif$degree, x$db.list)$llike;
+            tau = tau_mean, pdgrm, x$anSpecif$degree, x$db.list);
 
   ls = apply(rbind(tau, V), 2, function(y){
              llike(omega, FZ, x$anSpecif$k, v = y[-1],
-             tau = y[1], pdgrm, x$anSpecif$degree, x$db.list)$llike});
+             tau = y[1], pdgrm, x$anSpecif$degree, x$db.list)});
   ls = unname(ls);
 
   # http://kylehardman.com/BlogPosts/View/6
