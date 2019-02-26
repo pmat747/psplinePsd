@@ -7,7 +7,7 @@ Author: Patricio Maturana Russel [aut, cre],
 Maintainer: Patricio Maturana Russel <p.russel@auckland.ac.nz>
 Description: Implementation of a Metropolis-within-Gibbs MCMC algorithm to estimate the spectral density of a stationary time series via P-splines.  The algorithm updates a nonparametric B-spline prior using the Whittle likelihood to produce pseudo-posterior samples and is based on the work presented in Maturana Russel, P. and Meyer, R. ArXiv.  This package follows bsplinePsd package structure.
 License: GPL (>= 3)
-Imports: Rcpp, expm
+Imports: Rcpp, expm, fields
 LinkingTo: Rcpp
 Encoding: UTF-8
 LazyData: true
