@@ -23,6 +23,12 @@ gibbs_pspline_postProposal <- function(data,
                                        psd,
                                        add = FALSE) {
 
+  if (burnin >= Ntotal) stop("burnin must be less than Ntotal")
+  if (any(c(Ntotal, burnin, thin) %% 1 != 0 || any(c(Ntotal, burnin, thin) < 0)))
+  if (any(c(tau.alpha, tau.beta) <= 0)) stop(" tau.alpha and tau.beta must be strictly positive")
+  if (any(c(Ntotal, thin) %% 1 != 0) || any(c(Ntotal, thin) <= 0)) stop("Ntotal must be strictly positive integers")
+  if ((burnin %% 1 != 0) || (burnin < 0)) stop("burnin must be a non-negative integer")
+
   ### specific operations ###
 
   if(is.null(psd)){
@@ -31,7 +37,7 @@ gibbs_pspline_postProposal <- function(data,
     cat("Posterior samples used to calibrate the proposals for the weights", "\n")
   }
 
-  k = psd$anSpecif$k;
+  k      = psd$anSpecif$k;
   degree = psd$anSpecif$degree;
 
   cat(paste("Number of B-splines k=", k, sep=""), "\n");
@@ -45,9 +51,10 @@ gibbs_pspline_postProposal <- function(data,
 
   n <- length(data);
 
+  if (n %% 2 != 0) stop("this version of bsplinePsd must have n even")
+
   if( (printIter<=0) || (printIter %% 1 != 0) )stop("printIter must be a positive integer value");
 
-  if (n %% 2 != 0) stop("this version of bsplinePsd must have n even")
 
   # Tolerance for mean centering
   tol <- 1e-4;
@@ -62,12 +69,6 @@ gibbs_pspline_postProposal <- function(data,
   rescale = stats::sd(data);
   data    = data / rescale;  # Data now has standard deviation 1
 
-  if (burnin >= Ntotal) stop("burnin must be less than Ntotal")
-  if (any(c(Ntotal, burnin, thin) %% 1 != 0 || any(c(Ntotal, burnin, thin) < 0)))
-  if (any(c(tau.alpha, tau.beta) <= 0)) stop(" tau.alpha and tau.beta must be strictly positive")
-  if (any(c(Ntotal, thin) %% 1 != 0) || any(c(Ntotal, thin) <= 0)) stop("Ntotal must be strictly positive integers")
-  if ((burnin %% 1 != 0) || (burnin < 0)) stop("burnin must be a non-negative integer")
-
   FZ <- fast_ft(data); # FFT data to frequency domain.  NOTE: Must be mean-centred.
 
   pdgrm <- abs(FZ) ^ 2; # Periodogram: NOTE: the length is n here.
@@ -75,10 +76,13 @@ gibbs_pspline_postProposal <- function(data,
   omega <- 2 * (1:(n / 2 + 1) - 1) / n; # Frequencies on unit interval
   lambda <- pi * omega; # Angular frequencies on [0, pi]
 
+  # number of samples to be stored
+  N = round(Ntotal/thin);
+
   # Open objects for storage
-  tau   <- rep(NA, Ntotal);
-  phi   <- rep(NA, Ntotal); # scalar in Multivariate Normal
-  delta <- rep(NA, Ntotal);
+  tau   <- rep(NA, N);
+  phi   <- rep(NA, N); # scalar in Multivariate Normal
+  delta <- rep(NA, N);
 
   # Difference Matrix
   P       = diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
@@ -115,7 +119,7 @@ gibbs_pspline_postProposal <- function(data,
 
   }
 
-  v = solve(sqrt.covV) %*% (v - muV);
+  v = solve(sqrt.covV) %*% (v - muV); # detransforming
 
   V = matrix(v, ncol = 1);
 
@@ -128,9 +132,7 @@ gibbs_pspline_postProposal <- function(data,
   ###
 
   # Store log likelihood
-  ll.trace    <- rep(NA, Ntotal)
-  ll.trace[1] <- llike(omega, FZ, k, sqrt.covV %*% V[, 1] + muV,
-                       tau[1], pdgrm, degree, db.list);
+  ll.trace    <- NULL;
 
   Count    = NULL; # acceptance probability
   sigma    = 1;    # variance of proposal distb for weights
@@ -144,82 +146,48 @@ gibbs_pspline_postProposal <- function(data,
   Us = log(stats::runif((Ntotal-1)*k1, 0, 1));
   Us = matrix(Us, nrow = Ntotal-1, ncol = k1);
 
+  # Initial values for the proposals
+  phi.store   = phi[1];
+  tau.store   = tau[1];
+  delta.store = delta[1];
+  V.store     = V[, 1];
+
   ptime = proc.time()[1]
 
   # Metropolis-within-Gibbs sampler
-  for (i in 1:(Ntotal-1)) {
 
-    if (i %% printIter == 0) {
-      cat(paste("Iteration", i, ",", "Time elapsed",
-                round(as.numeric(proc.time()[1] - ptime) / 60, 2),
-                "minutes"), "\n")
-    }
+  for(j in 1:(N-1)){
 
-    v = sqrt.covV %*% V[, i] + muV;
+    adj    = (j - 1) * thin;
 
-    f.store  <- lpost(omega,
-                      FZ,
-                      k,
-                      v,
-                      tau[i],
-                      tau.alpha,
-                      tau.beta,
-                      phi[i],
-                      phi.alpha,
-                      phi.beta,
-                      delta[i],
-                      delta.alpha,
-                      delta.beta,
-                      P,
-                      pdgrm,
-                      degree,
-                      db.list)
+    V.star = V.store; # proposal value
 
-    ##############
-    ### WEIGHT ###
-    ##############
+    aux    = sample(k1); # positions to be changed in the thining loop
 
-    V.store = V[, i];
+    # Thining
+    for (i in 1:thin) {
 
-    V.star  = V.store;
+      iter = i + adj;
 
-    aux     = sample(k1);
+      if (iter %% printIter == 0) {
+        cat(paste("Iteration", iter, ",", "Time elapsed",
+                  round(as.numeric(proc.time()[1] - ptime) / 60, 2),
+                  "minutes"), "\n")
+      }
 
-    # tunning proposal distribution
+      v.store = sqrt.covV %*% V.store + muV;
 
-    if(count < 0.30){ # increasing acceptance pbb
-
-      sigma = sigma * 0.90; # decreasing proposal moves
-
-    }else if(count > 0.50){ # decreasing acceptance pbb
-
-      sigma = sigma * 1.1; # increasing proposal moves
-
-    }
-    #print(sigma)
-    count   = 0; # acceptance probability
-
-    for(j in 1:k1){
-      #print(j)
-      pos         = aux[j];
-
-      #sigma       = Sigma[pos]; # Another approach, individual variance
-
-      V.star[pos] = V.store[pos] + sigma * Zs[i,j];
-
-      v = sqrt.covV %*% V.star + muV;
-
-      f.V.star <- lpost(omega,
+      f.store  <- lpost(omega,
                         FZ,
                         k,
-                        v, # proposal value
-                        tau[i],
+                        v.store,            # parameter
+                        tau.store,    # parameter
                         tau.alpha,
                         tau.beta,
-                        phi[i],
+                        phi.store,    # parameter
                         phi.alpha,
                         phi.beta,
-                        delta[i],
+                        delta.store,  # parameter
                         delta.alpha,
                         delta.beta,
                         P,
@@ -227,92 +195,152 @@ gibbs_pspline_postProposal <- function(data,
                         degree,
                         db.list)
 
-      # log posterior for previous iteration
-      f.V <- f.store;
+      ##############
+      ### WEIGHT ###
+      ##############
 
-      #Accept/reject
+      #V.star  = V.store;
 
-      alpha1 <- min(0, f.V.star - f.V);  # log acceptance ratio
+      #aux     = sample(k1);
 
-      if(Us[i,j] < alpha1) {
+      # tunning proposal distribution
 
-        V.store[pos] <- V.star[pos];  # Accept W.star
-        f.store      <- f.V.star;
-        count        <- count + 1; # ACCEPTANCE PROBABILITY
+      if(count < 0.30){ # increasing acceptance pbb
 
-      }else {
+        sigma = sigma * 0.90; # decreasing proposal moves
 
-        V.star[pos] = V.store[pos]; # reseting proposal value
+      }else if(count > 0.50){ # decreasing acceptance pbb
+
+        sigma = sigma * 1.1; # increasing proposal moves
 
       }
 
-    } # End updating weights
+      count   = 0; # acceptance probability
 
-    V        = cbind(V, V.store);
-    count    = count / k1;
-    Count[i] = count; # acceptance probability
+      for(g in 1:k1){
 
-    ###########
-    ### phi ###
-    ###########
+        pos         = aux[g];
 
-    v        = sqrt.covV %*% V[, i+1] + muV;
+        #sigma       = Sigma[pos]; # Another approach, individual variance
 
-    phi[i+1] = stats::rgamma(1, shape = k1/2 + phi.alpha,
-                             rate = phi.beta * delta[i] + t(v) %*% P %*% v / 2);
+        V.star[pos] = V.store[pos] + sigma * Zs[iter, g];
 
-    #############
-    ### delta ###
-    #############
+        v.star = sqrt.covV %*% V.star + muV;
 
-    delta[i+1] = stats::rgamma(1, shape = phi.alpha + delta.alpha,
-                               rate = phi.beta * phi[i+1] + delta.beta);
+        f.V.star <- lpost(omega,
+                          FZ,
+                          k,
+                          v.star, # proposal value
+                          tau.store,
+                          tau.alpha,
+                          tau.beta,
+                          phi.store,
+                          phi.alpha,
+                          phi.beta,
+                          delta.store,
+                          delta.alpha,
+                          delta.beta,
+                          P,
+                          pdgrm,
+                          degree,
+                          db.list);
 
-    ###########
-    ### tau ###
-    ###########
+        #Accept/reject
 
-    # Directly sample tau from conjugate Inverse-Gamma density
+        alpha1 <- min(0, f.V.star - f.store);  # log acceptance ratio
 
-    q.psd <- qpsd(omega, k, v, degree, db.list)$psd;
-    m     <- n - 2;
-    q     <- rep(NA, m);
-    q[1]  <- q.psd[1];
-    q[m]  <- q.psd[length(q.psd)];
-    q[2 * 1:(m / 2 - 1)] <- q[2 * 1:(m / 2 - 1) + 1] <- q.psd[1:(m / 2 - 1) + 1];
+        if(Us[iter, g] < alpha1) {
 
-    # Note the (n - 2) here - we remove the first and last terms
-    tau[i+1] <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
-                                  tau.beta + sum(pdgrm[2:(n - 1)] / q) / (2 * pi) / 2);
+          V.store[pos] <- V.star[pos];  # Accept V.star
+          f.store      <- f.V.star;
+          count        <- count + 1; # ACCEPTANCE PROBABILITY
+          v.store      <- v.star;
 
-    ##############################
-    ### Compute log likelihood ###
-    ##############################
+        }else {
 
-    ll.trace[i + 1] <- llike(omega, FZ, k, v, tau[i + 1], pdgrm,
-                             degree, db.list);
+          V.star[pos] = V.store[pos]; # reseting proposal value
+
+        }
+
+      } # End updating weights
+
+      count       = count / k1;
+      Count[iter] = count; # acceptance probability
+
+      ###########
+      ### phi ###
+      ###########
+
+      #v = sqrt.covV %*% V.store + muV;
+      v = v.store;
+
+      phi.store = stats::rgamma(1, shape = k1/2 + phi.alpha,
+                               rate = phi.beta * delta.store + t(v) %*% P %*% v / 2);
+
+      #############
+      ### delta ###
+      #############
+
+      delta.store = stats::rgamma(1, shape = phi.alpha + delta.alpha,
+                                  rate = phi.beta * phi.store + delta.beta);
+
+      ###########
+      ### tau ###
+      ###########
+
+      # Directly sample tau from conjugate Inverse-Gamma density
+
+      q.psd <- qpsd(omega, k, v, degree, db.list)$psd;
+      m     <- n - 2;
+      q     <- rep(NA, m);
+      q[1]  <- q.psd[1];
+      q[m]  <- q.psd[length(q.psd)];
+      q[2 * 1:(m / 2 - 1)] <- q[2 * 1:(m / 2 - 1) + 1] <- q.psd[1:(m / 2 - 1) + 1];
+
+      # Note the (n - 2) here - we remove the first and last terms
+      tau.store <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
+                                     tau.beta + sum(pdgrm[2:(n - 1)] / q) / (2 * pi) / 2);
+
+    } # END: thining
+
+  ######################
+  ### Storing values ###
+  ######################
+
+  phi[j+1]   = phi.store;
+  delta[j+1] = delta.store;
+  tau[j+1]   = tau.store;
+  V          = cbind(V, V.store);
 
   } # END: MCMC loop
 
-  # Which iterations to keep
-  keep  <- seq(burnin + 1, Ntotal, by = thin);
-  tau   <- tau[keep];
-  phi   <- phi[keep];
-  delta <- delta[keep];
-  V     <- V[, keep];
-  ll.trace <- ll.trace[keep];
+  # Discarding burn-in period
+  keep <- seq(round(burnin/thin) + 1, N);
+  tau  <- tau[keep];
+  phi  <- phi[keep];
+  delta<- delta[keep];
+  V    <- V[, keep];
 
-  V = apply(V,2, function(x) sqrt.covV %*% x + muV); # converting to actual V
+  # converting to actual V
+  V = apply(V,2, function(x) sqrt.covV %*% x + muV);
+
+  ##############################
+  ### Compute log likelihood ###
+  ##############################
+
+  for(i in 1:length(keep)){
+
+    ll.trace = c(ll.trace,
+                 llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
+  }
 
   fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
-  # knots.trace <- matrix(NA, nrow = kmax, ncol = length(keep))
 
   # Store PSDs
   for (isample in 1:length(keep)) {
-    #q.psd <- qpsd(omega, k, sqrt.covV %*% V[, isample] + muV, degree, db.list); # db.list ADDED
-    q.psd <- qpsd(omega, k, V[, isample], degree, db.list); # db.list ADDED
+
+    q.psd <- qpsd(omega, k, V[, isample], degree, db.list);
     fpsd.sample[, isample] <- tau[isample] * q.psd$psd;
-    #knots.trace[1:length(q.psd$knots), isample] <- q.psd$knots
     log.fpsd.sample[, isample] <- logfuller(fpsd.sample[, isample]); # Create transformed version
   }
 
