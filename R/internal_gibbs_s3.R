@@ -6,7 +6,9 @@
 #' @param ylog logical value (default is TRUE) to determine if PSD (y-axis) should be on natural log scale
 #' @param ... other graphical parameters from the plot.default function
 #' @return plot of the estimate of the (log) PSD
+#'
 #' @seealso \link{gibbs_pspline}
+#' @references Edwards, M. C., Meyer, R., and Christensen, N. (2018), bsplinePsd: Bayesian power spectral density estimation using B-spline priors. R package
 #' @examples
 #' \dontrun{
 #'

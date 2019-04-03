@@ -42,6 +42,9 @@ plot(mcmc)
 plot(mcmc, ylog = FALSE, main = "Estimate of PSD using the P-spline method")
 }
 }
+\references{
+Edwards, M. C., Meyer, R., and Christensen, N. (2018), bsplinePsd: Bayesian power spectral density estimation using B-spline priors. R package
+}
 \seealso{
 \link{gibbs_pspline}
 }

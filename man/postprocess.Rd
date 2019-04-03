@@ -14,7 +14,7 @@ postprocess(x, burnin, thin = 1)
 \item{thin}{thinning number (post-processing)}
 }
 \value{
-A list with S3 class 'psd' containing the following updated components:
+A list with S3 class `psd' containing the following updated components:
    \item{psd.median,psd.mean}{psd estimates: (pointwise) posterior median and mean}
    \item{psd.p05,psd.p95}{90\% pointwise credibility interval}
    \item{psd.u05,psd.u95}{90\% uniform credibility interval}
@@ -25,7 +25,7 @@ A list with S3 class 'psd' containing the following updated components:
    \item{count}{acceptance probabilities for the weigths}
 }
 \description{
-This function allows to discard a specified number of samples as burn-in period and also thin them.
+This function allows to discard a specified number of samples as burn-in period and apply thinning factor to a \code{psd} object.
 }
 \examples{
 \dontrun{
@@ -39,7 +39,7 @@ data = data - mean(data);
 
 # Run MCMC (may take some time)
 mcmc = gibbs_pspline(data, 5000, 0);
-mcmc = burnin(mcmc, burnin = 500, thin = 10);
+mcmc = postprocess(mcmc, burnin = 500, thin = 10);
 
 require(beyondWhittle)  # For psd_arma() function
 freq = 2 * pi / n * (1:(n / 2 + 1) - 1)[-c(1, n / 2 + 1)]  # Remove first and last frequency
@@ -48,11 +48,6 @@ plot(mcmc)  # Plot log PSD (see documentation of plot.psd)
 lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
 
 }
-}
-\references{
-Edwards, M. C., Meyer, R., and Christensen, N. (2018), Bayesian nonparametric spectral density estimation using B-spline priors, \emph{Statistics and Computing}, <https://doi.org/10.1007/s11222-017-9796-9>.
-
-Choudhuri, N., Ghosal, S., and Roy, A. (2004), Bayesian estimation of the spectral density of a time series, \emph{Journal of the American Statistical Association}, 99(468):1050--1059.
 }
 \seealso{
 \link{plot.psd}

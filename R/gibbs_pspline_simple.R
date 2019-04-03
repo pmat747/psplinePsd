@@ -15,8 +15,9 @@ gibbs_pspline_simple <- function(data,
                                  delta.alpha = 1e-04,
                                  delta.beta = 1e-04,
                                  k = NULL,
+                                 eqSpacedKnots = FALSE,
                                  degree = 3,
-                                 diffMatrixOrder = 3,
+                                 diffMatrixOrder = 2,
                                  printIter = 100) {
 
   if (burnin >= Ntotal) stop("burnin must be less than Ntotal")
@@ -90,8 +91,11 @@ gibbs_pspline_simple <- function(data,
   ###
   # Since the number of knots are fixed,
   #  the B-splines only need to be calculated once.
-  newk    <- k - degree + 1;
-  knots   <- seq(0,1, length = newk);
+
+  #newk    <- k - degree + 1;
+  #knots   <- seq(0,1, length = newk);
+  knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
+
   db.list <- dbspline(omega, knots, degree);
   ###
 
@@ -287,8 +291,8 @@ gibbs_pspline_simple <- function(data,
                  llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
   }
 
+  #fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega), ncol = length(keep));
   fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
-  # knots.trace <- matrix(NA, nrow = kmax, ncol = length(keep))
 
   # Store PSDs
   for (isample in 1:length(keep)) {
@@ -344,7 +348,7 @@ gibbs_pspline_simple <- function(data,
   pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
 
   # storing analysis specifications
-  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ);
+  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ, eqSpacedKnots = eqSpacedKnots);
 
   # List to output
   output = list(psd.median = psd.median * rescale ^ 2,

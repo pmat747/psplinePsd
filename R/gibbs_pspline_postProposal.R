@@ -17,8 +17,9 @@ gibbs_pspline_postProposal <- function(data,
                                        delta.alpha = 1e-04,
                                        delta.beta = 1e-04,
                                        k = NULL,
+                                       eqSpacedKnots = FALSE,
                                        degree = 3,
-                                       diffMatrixOrder = 3,
+                                       diffMatrixOrder = 2,
                                        printIter = 100,
                                        psd,
                                        add = FALSE) {
@@ -39,6 +40,7 @@ gibbs_pspline_postProposal <- function(data,
 
   k      = psd$anSpecif$k;
   degree = psd$anSpecif$degree;
+  eqSpacedKnots = psd$anSpecif$eqSpacedKnots;
 
   cat(paste("Number of B-splines k=", k, sep=""), "\n");
 
@@ -126,8 +128,10 @@ gibbs_pspline_postProposal <- function(data,
   ###
   # Since the number of knots are fixed,
   #  the B-splines only need to be calculated once.
-  newk     <- k - degree + 1;
-  knots    <- seq(0,1, length = newk);
+
+  #newk     <- k - degree + 1;
+  #knots    <- seq(0,1, length = newk);
+  knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
   db.list  <- dbspline(omega, knots, degree);
   ###
 
@@ -334,6 +338,7 @@ gibbs_pspline_postProposal <- function(data,
                  llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
   }
 
+  #fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega), ncol = length(keep));
   fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
 
   # Store PSDs

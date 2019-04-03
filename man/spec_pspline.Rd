@@ -35,22 +35,22 @@ spec_pspline(data, l, p, eq = TRUE, Ntotal1, burnin1, thin1, Ntotal,
 
 \item{phi.alpha, phi.beta}{prior parameters for phi (Gamma)}
 
-\item{delta.alpha, delta.beta}{prior parameters for delta (Gamma), which is a factor of the shape hyperparameter in the Gamma prior for tau}
+\item{delta.alpha, delta.beta}{prior parameters for delta (Gamma)}
 
-\item{k}{number of B-splines}
+\item{k}{number of B-spline densities in the mixture}
 
 \item{degree}{positive integer specifying the degree of the B-spline densities (default is 3)}
 
-\item{diffMatrixOrder}{order of the difference penalty matrix (1, 2 or 3)}
+\item{diffMatrixOrder}{positive integer specifying the order of the difference penalty matrix in the P-splines (default is 2)}
 
-\item{printIter}{print periodically on screen the iteration number}
+\item{printIter}{positive integer specifying the periodicity of the iteration number to be printed on screen (default 100)}
 
 \item{recycl}{if \code{TRUE} the mcmc analysis for a data subset is used to calibrate the proposal for the succesor data subset.  It works for large \code{p} values.}
 
 \item{likePlot}{if \code{TRUE}, a likelihood traceplot is generated for each data subset}
 }
 \value{
-A list with S3 class 'psds' containing the the power spectral estimates for the data subsets and and a list with relevant information about the analysis
+A list with S3 class `psds' containing the the power spectral estimates for the data subsets and and a list with relevant information about the analysis
 }
 \description{
 This function allows to estimate the spectrum
@@ -72,11 +72,6 @@ spec = spec_pspline(data, l=30, p=20, Ntotal1=3000, burnin1=1000, thin1=10,
 image(spec) # Plot log PSD (see documentation of image.plot.psd)
 
 }
-}
-\references{
-Edwards, M. C., Meyer, R., and Christensen, N. (2018), Bayesian nonparametric spectral density estimation using B-spline priors, \emph{Statistics and Computing}, <https://doi.org/10.1007/s11222-017-9796-9>.
-
-Choudhuri, N., Ghosal, S., and Roy, A. (2004), Bayesian estimation of the spectral density of a time series, \emph{Journal of the American Statistical Association}, 99(468):1050--1059.
 }
 \seealso{
 \link{gibbs_pspline}

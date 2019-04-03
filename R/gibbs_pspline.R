@@ -1,31 +1,32 @@
-#' @title Metropolis-within-Gibbs sampler for spectral inference of a stationary time series using p-splines
-#' @description This function uses the Whittle likelihood and obtains samples from the pseudo-posterior to infer the spectral density of a stationary time series.
-#' @details The function \code{gibbs_pspline} is an implementation of the (serial version of the) MCMC algorithm presented in Edwards et al. (2018).  This algorithm uses P-splines to estimate the spectral density of a stationary time series and can be considered a particular case of the algorithm of Edwards et al. (2018), which used a B-spline prior allowing the number of B-splines functions to be variable.
-#'          We consider the prior on the spectral density given by
+#' @title Metropolis-within-Gibbs sampler for spectral inference of a stationary time series using a P-spline prior
+#' @description This function uses the Whittle likelihood and obtains samples from the pseudo-posterior to infer the spectral density of a stationary time series. A P-spline prior is allocated on the spectral density function.
+#' @details The function \code{gibbs_pspline} is an implementation of the (serial version of the) MCMC algorithm presented in Maturana-Russel et al. (2019).  This algorithm uses a P-spline prior to estimate the spectral density of a stationary time series and can be considered a particular case of the algorithm presented in Edwards et al. (2018), which used a B-spline prior allowing the number of B-spline densities and knot locations to be variable.
+#'          We define the prior on the spectral density as
 #'          \deqn{f(w) = \tau \sum_{j=1}^{k}w_{j}B_{j}(w)}
-#'          where \eqn{B_{j}} is the B-spline density.  The following prior is allocated indirectly on the weights \eqn{w}:
+#'          where \eqn{B_{j}} is the B-spline density.  The following prior is allocated indirectly on the weights \eqn{w_j}:
 #'
-#'          \deqn{v|\phi \delta ~ N_{k-1}(0, (\phi D^\top D)^{-1})}
+#'          \deqn{v|\phi, \delta \sim N_{k-1}(0, (\phi D^\top D)^{-1})}
 #'
-#'          \deqn{\phi|\delta ~ Gamma(\alpha_{\phi}, \delta \beta_{\phi})}
+#'          \deqn{\phi|\delta \sim Gamma(\alpha_{\phi}, \delta \beta_{\phi})}
 #'
-#'          \deqn{\delta ~ Gamma(\alpha_{\delta}, \beta_{\delta})}
+#'          \deqn{\delta \sim Gamma(\alpha_{\delta}, \beta_{\delta})}
 #'
-#'          where \deqn{v_{j} = \log ( \frac{w_{j}}{1-\sum_{j=1}^{k-1} w_{j}} )}.
+#'          where \deqn{v_{j} = \log \left( \frac{w_{j}}{1-\sum_{j=1}^{k-1} w_{j}} \right)}
 #' @param data numeric vector
 #' @param Ntotal total number of iterations to run the Markov chain
 #' @param burnin number of initial iterations to be discarded
 #' @param thin thinning number (post-processing)
 #' @param tau.alpha,tau.beta prior parameters for tau (Inverse-Gamma)
 #' @param phi.alpha,phi.beta prior parameters for phi (Gamma)
-#' @param delta.alpha,delta.beta prior parameters for delta (Gamma), which is a factor of the shape hyperparameter in the Gamma prior for tau
-#' @param k number of B-splines
+#' @param delta.alpha,delta.beta prior parameters for delta (Gamma)
+#' @param k number of B-spline densities in the mixture
+#' @param eqSpacedKnots logical value indicating whether the knots are equally spaced or defined according to the periodogram
 #' @param degree positive integer specifying the degree of the B-spline densities (default is 3)
-#' @param diffMatrixOrder  order of the difference penalty matrix (1, 2 or 3)
-#' @param printIter print periodically on screen the iteration number
+#' @param diffMatrixOrder positive integer specifying the order of the difference penalty matrix in the P-splines (default is 2)
+#' @param printIter positive integer specifying the periodicity of the iteration number to be printed on screen (default 100)
 #' @param psd output from \code{gibbs_pspline} function
-#' @param add logical value indicating wether to add pilot posterior samples "psd" to the current analysis
-#' @return A list with S3 class 'psd' containing the following components:
+#' @param add logical value indicating whether to add pilot posterior samples in the "psd" object to the current analysis
+#' @return A list with S3 class `psd' containing the following components:
 #'    \item{psd.median,psd.mean}{psd estimates: (pointwise) posterior median and mean}
 #'    \item{psd.p05,psd.p95}{90\% pointwise credibility interval}
 #'    \item{psd.u05,psd.u95}{90\% uniform credibility interval}
@@ -40,8 +41,7 @@
 #'    \item{count}{acceptance probabilities for the weigths}
 #' @seealso \link{plot.psd}
 #' @references Edwards, M. C., Meyer, R., and Christensen, N. (2018), Bayesian nonparametric spectral density estimation using B-spline priors, \emph{Statistics and Computing}, <https://doi.org/10.1007/s11222-017-9796-9>.
-#'
-#' Choudhuri, N., Ghosal, S., and Roy, A. (2004), Bayesian estimation of the spectral density of a time series, \emph{Journal of the American Statistical Association}, 99(468):1050--1059.
+#' Maturana-Russel, P., and Meyer, R. (2019), Spectral density estimation using P-spline priors. ArXiv
 #'
 #' @examples
 #' \dontrun{
@@ -53,8 +53,8 @@
 #' data = arima.sim(n, model = list(ar = 0.9))
 #' data = data - mean(data)
 #'
-#' # Run MCMC (may take some time)#'
-#' pilotmcmc = gibbs_pspline(data, 2500, 500); # pilot run
+#' # Run MCMC (may take some time)
+#' pilotmcmc = gibbs_pspline(data, 2500, 500); # pilot run used used in mcmc1 analysis
 #' mcmc1 = gibbs_pspline(data, 3000, 2000, psd = pilotmcmc);
 #' mcmc2 = gibbs_pspline(data, 3000, 0, psd = mcmc1, add = TRUE); # reciclying mcmc1 samples
 #'
@@ -83,8 +83,9 @@ gibbs_pspline <- function(data,
                           delta.alpha = 1e-04,
                           delta.beta = 1e-04,
                           k = NULL,
+                          eqSpacedKnots = FALSE,
                           degree = 3,
-                          diffMatrixOrder = 3,
+                          diffMatrixOrder = 2,
                           printIter = 100,
                           psd = NULL,
                           add = FALSE) {
@@ -102,6 +103,7 @@ gibbs_pspline <- function(data,
                                delta.alpha = delta.alpha,
                                delta.beta = delta.beta,
                                k = k,
+                               eqSpacedKnots = eqSpacedKnots,
                                degree = degree,
                                diffMatrixOrder = diffMatrixOrder,
                                printIter = printIter);
@@ -119,6 +121,7 @@ gibbs_pspline <- function(data,
                                      delta.alpha = delta.alpha,
                                      delta.beta = delta.beta,
                                      k = k,
+                                     eqSpacedKnots = eqSpacedKnots,
                                      degree = degree,
                                      diffMatrixOrder = diffMatrixOrder,
                                      printIter = printIter,

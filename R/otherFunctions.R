@@ -87,3 +87,59 @@ ints = function(n, l, p = 00, eq = TRUE){
   return(index);
 }
 
+
+#' This function produces the knot location
+#'
+#' data     = data
+#' k        = number of B-spline densities
+#' degree   = positive integer specifying the degree of the B-spline densities (default is 3)
+#' eqSpaced = if TRUE, it produces equally spaced knots, otherwise it allocates the knots according to the periodogram
+#' @importFrom stats approxfun sd
+#' @keywords internal
+knotLoc = function(data, k, degree, eqSpaced = FALSE){
+
+  if(eqSpaced == TRUE){
+
+    knots = seq(from = 0, to = 1, length = k - degree + 1);
+
+    return(knots);
+
+  }
+
+  data  = data - mean(data);
+  FZ    = fast_ft(data); # FFT data to frequency domain.  NOTE: Must be mean-centred.
+  pdgrm = abs(FZ) ^ 2; # Periodogram: NOTE: the length is n here.
+
+  #aux   = (pdgrm - mean(pdgrm)) / sd(pdgrm);
+  aux   = sqrt(pdgrm)
+  aux   = (aux - mean(aux))/stats::sd(aux)
+
+  N     = length(pdgrm);
+
+  # function based on peridogram
+  f = stats::approxfun(x = seq(0,1,length = N), y = abs(aux)/sum(abs(aux)),
+                       yleft = 0, yright = 0);
+
+  # cumulative values of f function
+  n    = 1000;
+  dens = f(seq(from = 0, to = 1, length = n));
+  dens = dens /sum(dens);
+  cumf = cumsum(dens);
+
+  # distribution function of f
+  df  = stats::approxfun(x = seq(0,1,length = n),
+                         y = cumf, yleft = 0, yright = 1);
+
+  # inverse distribution of f
+  invDf = stats::approxfun(x = df(seq(0,1,length = n)),
+                           y = seq(0,1,length = n), yleft = 0, yright = 1);
+
+  # equally spaced knots
+  knots = seq(0,1,length = k - degree + 1);
+
+  # knots based on peaks of the periodogram
+  knots = invDf(knots);
+
+  return(knots);
+
+}

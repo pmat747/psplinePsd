@@ -3,30 +3,9 @@
 #' "dbspline" function has been taken from "bsplinePsd" package
 #'    Other functions have been modified for our case.
 #'
-#' @description This function generates a B-spline density basis of any degree.  Function taken from "bsplinePsd" package
-#' @details \link{splineDesign} is used to generate a B-spline basis of any degree.  Each B-spline is then normalised to become a B-spline density using analytical integration.  Note that the two boundary knots (0 and 1) are each coincident \code{degree} + 1 times.
 #' @importFrom splines splineDesign
 #' @importFrom Rcpp evalCpp
-#' @export
-#' @param x numeric vector for which the B-spline densities are to be generated
-#' @param knots knots used to generate the B-spline densities
-#' @param degree positive integer specifying the degree of the B-spline densities (default is 3 for cubic B-splines)
-#' @return matrix of the B-spline density basis
-#' @seealso \link{splineDesign}
-#' @examples
-#' \dontrun{
-#'
-#' # Generate basis functions
-#' set.seed(1)
-#' x = seq(0, 1, length = 256)
-#' knots = sort(c(0, runif(10), 1))
-#' basis = dbspline(x, knots)
-#'
-#' # Plot basis functions
-#' plot(x, basis[1, ], type = "l", ylim = c(min(basis), max(basis)),
-#'      ylab = expression(b[3](x)), main = "Cubic B-spline Density Basis Functions")
-#' for (i in 2:nrow(basis)) lines(x, basis[i, ], col = i)
-#' }
+#' @keywords internal
 dbspline = function (x, knots, degree = 3)  {
 
   knots.mult <- c(rep(knots[1], degree), knots, rep(knots[length(knots)], degree))

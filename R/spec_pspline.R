@@ -12,19 +12,15 @@
 #' @param thin thinning number (post-processing)
 #' @param tau.alpha,tau.beta prior parameters for tau (Inverse-Gamma)
 #' @param phi.alpha,phi.beta prior parameters for phi (Gamma)
-#' @param delta.alpha,delta.beta prior parameters for delta (Gamma), which is a factor of the shape hyperparameter in the Gamma prior for tau
-#' @param k number of B-splines
+#' @param delta.alpha,delta.beta prior parameters for delta (Gamma)
+#' @param k number of B-spline densities in the mixture
 #' @param degree positive integer specifying the degree of the B-spline densities (default is 3)
-#' @param diffMatrixOrder  order of the difference penalty matrix (1, 2 or 3)
-#' @param printIter print periodically on screen the iteration number
+#' @param diffMatrixOrder positive integer specifying the order of the difference penalty matrix in the P-splines (default is 2)
+#' @param printIter positive integer specifying the periodicity of the iteration number to be printed on screen (default 100)
 #' @param recycl if \code{TRUE} the mcmc analysis for a data subset is used to calibrate the proposal for the succesor data subset.  It works for large \code{p} values.
 #' @param likePlot if \code{TRUE}, a likelihood traceplot is generated for each data subset
-#' @return A list with S3 class 'psds' containing the the power spectral estimates for the data subsets and and a list with relevant information about the analysis
+#' @return A list with S3 class `psds' containing the the power spectral estimates for the data subsets and and a list with relevant information about the analysis
 #' @seealso \link{gibbs_pspline}
-#' @references Edwards, M. C., Meyer, R., and Christensen, N. (2018), Bayesian nonparametric spectral density estimation using B-spline priors, \emph{Statistics and Computing}, <https://doi.org/10.1007/s11222-017-9796-9>.
-#'
-#' Choudhuri, N., Ghosal, S., and Roy, A. (2004), Bayesian estimation of the spectral density of a time series, \emph{Journal of the American Statistical Association}, 99(468):1050--1059.
-#'
 #' @examples
 #' \dontrun{
 #'
