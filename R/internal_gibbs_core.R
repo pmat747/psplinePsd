@@ -1,7 +1,6 @@
 #' Generate a B-spline density basis of any degree
-#'
 #' "dbspline" function has been taken from "bsplinePsd" package
-#'    Other functions have been modified for our case.
+#' The other functions have been modified for our case.
 #'
 #' @importFrom splines splineDesign
 #' @importFrom Rcpp evalCpp
@@ -37,12 +36,12 @@ qpsd = function (omega, k, v, degree, db.list)
   psd <- densityMixture(weight, db.list)
   epsilon <- 1e-20
   psd <- pmax(psd, epsilon)
-  psd <- psd[-c(1, length(psd))]
-  return(list(psd = psd, db.list = db.list))
+  #psd <- psd[-c(1, length(psd))]
+  return(psd)
 }
 
 #' This function can deal with Inf values when taking exponential of weigths,
-#'   unlike the function "qpsd" defined above
+#' unlike the function "qpsd" defined above
 #' @importFrom Rcpp evalCpp
 #' @keywords internal
 qpsd = function (omega, k, v, degree, db.list)
@@ -72,25 +71,8 @@ qpsd = function (omega, k, v, degree, db.list)
   psd     <- densityMixture(weight, db.list);
   epsilon <- 1e-20;
   psd     <- pmax(psd, epsilon);
-  psd     <- psd[-c(1, length(psd))];
-  return(list(psd = psd, db.list = db.list));
-}
-
-#' @keywords internal
-logplus <- function(x,y)
-{
-  if(x>y) x + log(1+exp(y-x))
-  else    y + log(1+exp(x-y))
-}
-
-# vec-version
-#' @keywords internal
-logplusvec = function(x){
-  r = -Inf;
-  for(i in x){
-    r = logplus(r, i);
-  }
-  return(r);
+  #psd     <- psd[-c(1, length(psd))];
+  return(psd);
 }
 
 #' log-prior
@@ -112,21 +94,34 @@ lprior = function (k, v, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta,
 }
 
 #' log Whittle likelihood
+#' @importFrom Rcpp evalCpp
+#' @useDynLib psplinePsd, .registration = TRUE
 #' @keywords internal
 llike = function (omega, FZ, k, v, tau, pdgrm, degree, db.list)
 {
-  n <- length(FZ)
-  m <- n - 2
-  qq.psd <- qpsd(omega, k, v, degree, db.list)
-  q.psd <- qq.psd$psd
-  q <- rep(NA, m)
-  q[1] <- q.psd[1]
-  q[m] <- q.psd[length(q.psd)]
-  q[2 * 1:(m/2 - 1)] <- q[2 * 1:(m/2 - 1) + 1] <- q.psd[1:(m/2 -
-                                                             1) + 1]
-  f <- tau * q
-  llike <- -sum(log(f) + pdgrm[2:(n - 1)]/(f * 2 * pi))/2
+  n <- length(FZ);
+
+  # Which boundary frequencies to remove from likelihood computation
+  if (n %% 2) {  # Odd length time series
+    bFreq <- 1  # Remove first
+  }
+  else {  # Even length time series
+    bFreq <- c(1, n)  # Remove first and last
+  }
+
+  # Un-normalised PSD (defined on [0, 1])
+  qq.psd <- qpsd(omega, k, v, degree, db.list);
+
+  q = unrollPsd(qq.psd, n); # Unrolls the unnormalised PSD to length n
+
+  # Normalised PSD (defined on [0, pi])
+  f <- tau * q;
+
+  # Whittle log-likelihood
+  llike <- -sum(log(f[-bFreq]) + pdgrm[-bFreq] / (f[-bFreq] * 2 * pi)) / 2;
+
   return(llike)
+
 }
 
 #' Unnormalised log posterior

@@ -20,3 +20,21 @@ NumericVector densityMixture(NumericVector weights, NumericMatrix densities) {
   }
   return(res);
 }
+
+//' C++ help function to redundantly roll out a PSD to length n
+//' @keywords internal
+// [[Rcpp::export]]
+NumericVector unrollPsd(NumericVector qPsd, unsigned n) {
+  NumericVector q(n);
+  q[0] = qPsd[0];
+  const unsigned N = (n-1)/2;
+  for (unsigned i = 1; i <= N; ++i) {
+    const unsigned j = 2 * i - 1;
+    q[j] = qPsd[i];
+    q[j+1] = qPsd[i];
+  }
+  if (!(n % 2)) {
+    q[n-1] = qPsd[qPsd.size() - 1];
+  }
+  return(q);
+}

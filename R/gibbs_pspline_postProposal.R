@@ -53,10 +53,15 @@ gibbs_pspline_postProposal <- function(data,
 
   n <- length(data);
 
-  if (n %% 2 != 0) stop("this version of bsplinePsd must have n even")
+  # Which boundary frequencies to remove from likelihood computation and tau sample
+  if (n %% 2) {  # Odd length time series
+    bFreq <- 1  # Remove first
+  }
+  else {  # Even length time series
+    bFreq <- c(1, n)  # Remove first and last
+  }
 
   if( (printIter<=0) || (printIter %% 1 != 0) )stop("printIter must be a positive integer value");
-
 
   # Tolerance for mean centering
   tol <- 1e-4;
@@ -92,9 +97,9 @@ gibbs_pspline_postProposal <- function(data,
   epsilon = 1e-6; #1e-10;
   P       = P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)
 
-  ##################################
-  ### Using gibbs_pspline output ###
-  ##################################
+  ######################################
+  ### Recycling gibbs_pspline output ###
+  ######################################
 
   # Proposal calibration
   muV  = apply(psd$V, 1, mean); # mean vector - posterior samples
@@ -125,15 +130,9 @@ gibbs_pspline_postProposal <- function(data,
 
   V = matrix(v, ncol = 1);
 
-  ###
-  # Since the number of knots are fixed,
-  #  the B-splines only need to be calculated once.
-
-  #newk     <- k - degree + 1;
-  #knots    <- seq(0,1, length = newk);
+  # Fixed knot number & location => a single calculation of B-spline densities
   knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
-  db.list  <- dbspline(omega, knots, degree);
-  ###
+  db.list <- dbspline(omega, knots, degree);
 
   # Store log likelihood
   ll.trace    <- NULL;
@@ -184,7 +183,7 @@ gibbs_pspline_postProposal <- function(data,
       f.store  <- lpost(omega,
                         FZ,
                         k,
-                        v.store,            # parameter
+                        v.store,      # parameter
                         tau.store,    # parameter
                         tau.alpha,
                         tau.beta,
@@ -294,16 +293,19 @@ gibbs_pspline_postProposal <- function(data,
 
       # Directly sample tau from conjugate Inverse-Gamma density
 
-      q.psd <- qpsd(omega, k, v, degree, db.list)$psd;
-      m     <- n - 2;
-      q     <- rep(NA, m);
-      q[1]  <- q.psd[1];
-      q[m]  <- q.psd[length(q.psd)];
-      q[2 * 1:(m / 2 - 1)] <- q[2 * 1:(m / 2 - 1) + 1] <- q.psd[1:(m / 2 - 1) + 1];
+      q.psd <- qpsd(omega, k, V.store, degree, db.list);
 
-      # Note the (n - 2) here - we remove the first and last terms
-      tau.store <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
-                                     tau.beta + sum(pdgrm[2:(n - 1)] / q) / (2 * pi) / 2);
+      q <- unrollPsd(q.psd, n)
+
+      # Note: (n - 1) and (n - 2) here.  Remove the first and last terms for even and first for odd
+      if (n %% 2) {  # Odd length series
+        tau[i + 1] <- 1 / stats::rgamma(1, tau.alpha + (n - 1) / 2,
+                                        tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
+      }
+      else{  # Even length series
+        tau[i + 1] <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
+                                        tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
+      }
 
     } # END: thining
 
@@ -338,14 +340,13 @@ gibbs_pspline_postProposal <- function(data,
                  llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
   }
 
-  #fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega), ncol = length(keep));
-  fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
+  fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega), ncol = length(keep));
 
   # Store PSDs
   for (isample in 1:length(keep)) {
 
     q.psd <- qpsd(omega, k, V[, isample], degree, db.list);
-    fpsd.sample[, isample] <- tau[isample] * q.psd$psd;
+    fpsd.sample[, isample] <- tau[isample] * q.psd;
     log.fpsd.sample[, isample] <- logfuller(fpsd.sample[, isample]); # Create transformed version
   }
 

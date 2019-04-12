@@ -5,6 +5,7 @@
 #' @param func statistics to be applied to \code{x}, e.g., \code{median} or \code{mean}
 #' @param logZ logical value (default is TRUE) to determine if the PSD should be on log scale
 #' @param zoomFreq interval which specifies the frequency axis to be plotted, for instance, c(0.2, 0.7) leaves out the 20\% and 30\% of the low and high frequencies, respectively.  The default value is c(0,1), i.e., all the frequencies
+#' @param fs sampling frequency
 #' @param ... other graphical parameters from the image.plot function
 #' @return plot of the estimate of the (log) spectrum
 #' @seealso \link{gibbs_pspline}
@@ -26,7 +27,7 @@
 #'
 #' image(spec) # Plot log PSD (see documentation of iplot.psds)
 #' }
-image.psds = function(x, func = "median", logZ = TRUE, zoomFreq = c(0,1), ...) {  # Plot method for "psds" class
+image.psds = function(x, func = "median", logZ = TRUE, zoomFreq = c(0,1), fs = 16384, ...) {  # Plot method for "psds" class
 
   if((zoomFreq[1]<0) || (zoomFreq[2]>1) || (zoomFreq[1] > zoomFreq[2])){
     stop("zoomFreq must be a vector c(a,b) with values 0 <= a < b <= 1")
@@ -50,9 +51,9 @@ image.psds = function(x, func = "median", logZ = TRUE, zoomFreq = c(0,1), ...) {
   }
 
   i <- 1:N;
-  x <- round(x$info$l / 4096 * (i-1) * pc * 1000, 2); # number of intervals
+  x <- round(x$info$l / fs * (i-1) * pc * 1000, 2); # number of intervals
   #y <- seq(0,1,length=dim(aux)[1]) # number of frequencies
-  y <- seq(1,4096/2,length=dim(aux)[1]);
+  y <- seq(1,fs/2,length=dim(aux)[1]);
 
   if(all(zoomFreq == c(0,1))){
 

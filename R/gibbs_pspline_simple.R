@@ -22,12 +22,19 @@ gibbs_pspline_simple <- function(data,
 
   if (burnin >= Ntotal) stop("burnin must be less than Ntotal")
   if (any(c(Ntotal, burnin, thin) %% 1 != 0 || any(c(Ntotal, burnin, thin) < 0)))
-    if (any(c(tau.alpha, tau.beta) <= 0)) stop(" tau.alpha and tau.beta must be strictly positive")
+  if (any(c(tau.alpha, tau.beta) <= 0)) stop(" tau.alpha and tau.beta must be strictly positive")
   if (any(c(Ntotal, thin) %% 1 != 0) || any(c(Ntotal, thin) <= 0)) stop("Ntotal must be strictly positive integers")
   if ((burnin %% 1 != 0) || (burnin < 0)) stop("burnin must be a non-negative integer")
 
   n <- length(data);
-  if (n %% 2 != 0) stop("this version of bsplinePsd must have n even")
+
+  # Which boundary frequencies to remove from likelihood computation and tau sample
+  if (n %% 2) {  # Odd length time series
+    bFreq <- 1  # Remove first
+  }
+  else {  # Even length time series
+    bFreq <- c(1, n)  # Remove first and last
+  }
 
   if(is.null(k)){
     k = min(round(n/4), 40);
@@ -78,9 +85,7 @@ gibbs_pspline_simple <- function(data,
   phi[1]   <- phi.alpha/(phi.beta * delta[1]);
 
   # starting value for the weights
-  #w      <- rep(0,k-1);
-  w = pdgrm / sum(pdgrm);
-  #w = w[round(seq(1, length(w), length = k-1))];
+  w = pdgrm / sum(pdgrm); # poor alternative: w=rep(0,k-1);
   w = w[round(seq(1, length(w), length = k))];
   w[which(w==0)] = 1e-50; # prevents errors when there are zeros
   w = w/sum(w);
@@ -88,21 +93,14 @@ gibbs_pspline_simple <- function(data,
   v = log(w / (1 - sum(w)));
   V = matrix(v, ncol = 1);
 
-  ###
-  # Since the number of knots are fixed,
-  #  the B-splines only need to be calculated once.
-
-  #newk    <- k - degree + 1;
-  #knots   <- seq(0,1, length = newk);
+  # Fixed knot number & location => a single calculation of B-spline densities
   knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
-
   db.list <- dbspline(omega, knots, degree);
-  ###
 
   # Store log likelihood
   ll.trace <- NULL;
 
-  Count = NULL; # ACCEPTANCE PROBABILITY
+  Count = NULL; # acceptance probability
   sigma = 1;    # variance of proposal distb for weights
   count = 0.4;  # starting value for acc pbb - optimal value
   k1    = k - 1;
@@ -213,9 +211,9 @@ gibbs_pspline_simple <- function(data,
 
         if(Us[iter,g] < alpha1) {
 
-          V.store[pos] <- V.star[pos];  # Accept W.star
+          V.store[pos] <- V.star[pos]; # Accept W.star
           f.store      <- f.V.star;
-          count        <- count + 1; # ACCEPTANCE PROBABILITY
+          count        <- count + 1; # acceptance probability
 
         }else {
 
@@ -248,16 +246,19 @@ gibbs_pspline_simple <- function(data,
 
       # Directly sample tau from conjugate Inverse-Gamma density
 
-      q.psd <- qpsd(omega, k, V.store, degree, db.list)$psd;
-      m <- n - 2;
-      q <- rep(NA, m);
-      q[1] <- q.psd[1];
-      q[m] <- q.psd[length(q.psd)];
-      q[2 * 1:(m / 2 - 1)] <- q[2 * 1:(m / 2 - 1) + 1] <- q.psd[1:(m / 2 - 1) + 1];
+      q.psd <- qpsd(omega, k, V.store, degree, db.list);
 
-      # Note the (n - 2) here - we remove the first and last terms
-      tau.store <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
-                                      tau.beta + sum(pdgrm[2:(n - 1)] / q) / (2 * pi) / 2);
+      q <- unrollPsd(q.psd, n)
+
+      # Note: (n - 1) and (n - 2) here.  Remove the first and last terms for even and first for odd
+      if (n %% 2) {  # Odd length series
+        tau[i + 1] <- 1 / stats::rgamma(1, tau.alpha + (n - 1) / 2,
+                                        tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
+      }
+      else {  # Even length series
+        tau[i + 1] <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
+                                        tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
+      }
 
     }# End thining
 
@@ -291,14 +292,13 @@ gibbs_pspline_simple <- function(data,
                  llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
   }
 
-  #fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega), ncol = length(keep));
-  fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
+  fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega), ncol = length(keep));
+  #fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega) - 2, ncol = length(keep));
 
   # Store PSDs
   for (isample in 1:length(keep)) {
-    q.psd <- qpsd(omega, k, V[, isample], degree, db.list); # db.list ADDED
-    fpsd.sample[, isample] <- tau[isample] * q.psd$psd;
-    #knots.trace[1:length(q.psd$knots), isample] <- q.psd$knots
+    q.psd <- qpsd(omega, k, V[, isample], degree, db.list);
+    fpsd.sample[, isample] <- tau[isample] * q.psd;
     log.fpsd.sample[, isample] <- logfuller(fpsd.sample[, isample]); # Create transformed version
   }
 
