@@ -10,43 +10,52 @@ gibbs_pspline_postProposal <- function(data,
                                        Ntotal,
                                        burnin,
                                        thin = 1,
-                                       tau.alpha = 0.001,
-                                       tau.beta = 0.001,
-                                       phi.alpha = 1,
-                                       phi.beta = 1,
-                                       delta.alpha = 1e-04,
-                                       delta.beta = 1e-04,
-                                       k = NULL,
-                                       eqSpacedKnots = FALSE,
-                                       degree = 3,
-                                       diffMatrixOrder = 2,
+                                       tau.alpha,  # specified in psd
+                                       tau.beta,   # specified in psd
+                                       phi.alpha,  # specified in psd
+                                       phi.beta,   # specified in psd
+                                       delta.alpha,# specified in psd
+                                       delta.beta, # specified in psd
+                                       k,          # specified in psd
+                                       eqSpacedKnots, # specified in psd
+                                       degree, # specified in psd
+                                       diffMatrixOrder, # specified in psd
                                        printIter = 100,
                                        psd,
                                        add = FALSE) {
 
-  if (burnin >= Ntotal) stop("burnin must be less than Ntotal")
-  if (any(c(Ntotal, burnin, thin) %% 1 != 0 || any(c(Ntotal, burnin, thin) < 0)))
-  if (any(c(tau.alpha, tau.beta) <= 0)) stop(" tau.alpha and tau.beta must be strictly positive")
-  if (any(c(Ntotal, thin) %% 1 != 0) || any(c(Ntotal, thin) <= 0)) stop("Ntotal must be strictly positive integers")
-  if ((burnin %% 1 != 0) || (burnin < 0)) stop("burnin must be a non-negative integer")
-
-  ### specific operations ###
+  ### extracting psd information ###
 
   if(is.null(psd)){
     stop("Include an output from gibbs_psline function");
   }else{
+    if(class(psd) != "psd")stop("'psd' must be a psd object");
     cat("Posterior samples used to calibrate the proposals for the weights", "\n")
   }
 
   k      = psd$anSpecif$k;
   degree = psd$anSpecif$degree;
   eqSpacedKnots = psd$anSpecif$eqSpacedKnots;
+  diffMatrixOrder = psd$anSpecif$diffMatrixOrder;
+  tau.alpha = psd$anSpecif$tau.alpha;
+  tau.beta  = psd$anSpecif$tau.beta;
+  phi.alpha = psd$anSpecif$phi.alpha;
+  phi.beta  = psd$anSpecif$phi.beta;
+  delta.alpha = psd$anSpecif$delta.alpha;
+  delta.beta  = psd$anSpecif$delta.beta;
+
+  if (burnin >= Ntotal) stop("burnin must be less than Ntotal")
+  if (any(c(Ntotal, thin) %% 1 != 0) || any(c(Ntotal, thin) <= 0)) stop("Ntotal and thin must be strictly positive integers")
+  if ((burnin %% 1 != 0) || (burnin < 0)) stop("burnin must be a non-negative integer")
+  if (any(c(tau.alpha, tau.beta) <= 0)) stop("tau.alpha and tau.beta must be strictly positive")
+  if (any(c(phi.alpha, phi.beta) <= 0)) stop("phi.alpha and phi.beta must be strictly positive")
+  if (any(c(delta.alpha, delta.beta) <= 0)) stop("delta.alpha and delta.beta must be strictly positive")
+  if(!is.logical(add))stop("add must be a logical value");
 
   cat(paste("Number of B-splines k=", k, sep=""), "\n");
 
   if( (Ntotal - burnin)/thin < k){
-    stop("Change specifications: Either increase Ntotal or decrease thin
-         parameters, otherwise the covariance matrix of the weights is singular")
+    stop("Change specifications: Either increase Ntotal or decrease thin parameters, otherwise the covariance matrix of the weights is singular");
   }
 
   ### ###
@@ -62,6 +71,8 @@ gibbs_pspline_postProposal <- function(data,
   }
 
   if( (printIter<=0) || (printIter %% 1 != 0) )stop("printIter must be a positive integer value");
+
+  if(!(k-2 >= diffMatrixOrder))stop("diffMatrixOrder must be lower than or equal to k-2");
 
   # Tolerance for mean centering
   tol <- 1e-4;
@@ -428,7 +439,11 @@ gibbs_pspline_postProposal <- function(data,
   pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
 
   # storing analysis specifications
-  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ);
+  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ,
+                  eqSpacedKnots = eqSpacedKnots, diffMatrixOrder = diffMatrixOrder,
+                  tau.alpha = tau.alpha, tau.beta = tau.beta,
+                  phi.alpha = phi.alpha, phi.beta = phi.beta,
+                  delta.alpha = delta.alpha, delta.beta = delta.beta);
 
   # List to output
   output = list(psd.median = psd.median * rescale ^ 2,

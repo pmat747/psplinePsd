@@ -58,7 +58,7 @@ A list with S3 class `psd' containing the following components:
 This function uses the Whittle likelihood and obtains samples from the pseudo-posterior to infer the spectral density of a stationary time series. A P-spline prior is allocated on the spectral density function.
 }
 \details{
-The function \code{gibbs_pspline} is an implementation of the (serial version of the) MCMC algorithm presented in Maturana-Russel et al. (2019).  This algorithm uses a P-spline prior to estimate the spectral density of a stationary time series and can be considered a particular case of the algorithm presented in Edwards et al. (2018), which used a B-spline prior allowing the number of B-spline densities and knot locations to be variable.
+The function \code{gibbs_pspline} is an implementation of the (serial version of the) MCMC algorithm presented in Maturana-Russel et al. (2019).  This algorithm uses a P-spline prior to estimate the spectral density of a stationary time series and is similar to the B-spline prior algorithm of Edwards et al. (2018), which used a B-spline prior allowing the number of B-spline densities and knot locations to be variable.
          We define the prior on the spectral density as
          \deqn{f(w) = \tau \sum_{j=1}^{k}w_{j}B_{j}(w)}
          where \eqn{B_{j}} is the B-spline density.  The following prior is allocated indirectly on the weights \eqn{w_j}:
@@ -82,7 +82,7 @@ data = arima.sim(n, model = list(ar = 0.9))
 data = data - mean(data)
 
 # Run MCMC (may take some time)
-pilotmcmc = gibbs_pspline(data, 2500, 500); # pilot run used used in mcmc1 analysis
+pilotmcmc = gibbs_pspline(data, 2500, 500); # pilot run used in mcmc1 analysis
 mcmc1 = gibbs_pspline(data, 3000, 2000, psd = pilotmcmc);
 mcmc2 = gibbs_pspline(data, 3000, 0, psd = mcmc1, add = TRUE); # reciclying mcmc1 samples
 
@@ -100,6 +100,7 @@ lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
 }
 \references{
 Edwards, M. C., Meyer, R., and Christensen, N. (2018), Bayesian nonparametric spectral density estimation using B-spline priors, \emph{Statistics and Computing}, <https://doi.org/10.1007/s11222-017-9796-9>.
+
 Maturana-Russel, P., and Meyer, R. (2019), Spectral density estimation using P-spline priors. ArXiv
 }
 \seealso{

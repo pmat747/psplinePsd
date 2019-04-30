@@ -1,5 +1,5 @@
 #' Plot method for psds class
-#' @description This function produces a spectogram from a psds object
+#' @description This function produces a spectogram from a psds object.
 #' @export
 #' @param x an object of class psds
 #' @param func statistics to be applied to \code{x}, e.g., \code{median} or \code{mean}
@@ -27,7 +27,7 @@
 #'
 #' image(spec) # Plot log PSD (see documentation of iplot.psds)
 #' }
-image.psds = function(x, func = "median", logZ = TRUE, zoomFreq = c(0,1), fs = 16384, ...) {  # Plot method for "psds" class
+image.psds = function(x, func = 'median', logZ = TRUE, zoomFreq = c(0,1), fs = 16384, ...) {  # Plot method for "psds" class
 
   if((zoomFreq[1]<0) || (zoomFreq[2]>1) || (zoomFreq[1] > zoomFreq[2])){
     stop("zoomFreq must be a vector c(a,b) with values 0 <= a < b <= 1")

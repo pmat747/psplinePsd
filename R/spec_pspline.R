@@ -14,6 +14,7 @@
 #' @param phi.alpha,phi.beta prior parameters for phi (Gamma)
 #' @param delta.alpha,delta.beta prior parameters for delta (Gamma)
 #' @param k number of B-spline densities in the mixture
+#' @param eqSpacedKnots logical value indicating whether the knots are equally spaced or defined according to the periodogram
 #' @param degree positive integer specifying the degree of the B-spline densities (default is 3)
 #' @param diffMatrixOrder positive integer specifying the order of the difference penalty matrix in the P-splines (default is 2)
 #' @param printIter positive integer specifying the periodicity of the iteration number to be printed on screen (default 100)
@@ -31,9 +32,9 @@
 #' data = arima.sim(n, model = list(ar = 0.9));
 #' data = data - mean(data);
 #'
-#' # Spectrum estimate via p-splines
-#' spec = spec_pspline(data, l=30, p=20, Ntotal1=3000, burnin1=1000, thin1=10,
-#'                     Ntotal=3000, burnin=1000, thin=10, k=30);
+#' # Spectrum estimate via p-splines (may take some time)
+#' spec = spec_pspline(data, l=50, p=90, Ntotal1=2000, burnin1=500, thin1=5,
+#'                     Ntotal=1000, burnin=500, thin=5, k=30, recycl = TRUE);
 #'
 #' image(spec) # Plot log PSD (see documentation of image.plot.psd)
 #'
@@ -58,6 +59,7 @@ spec_pspline = function(data,
                         delta.alpha = 1e-04,
                         delta.beta = 1e-04,
                         k = NULL,
+                        eqSpacedKnots = FALSE,
                         degree = 3,
                         diffMatrixOrder = 3,
                         printIter = 1000,
@@ -103,7 +105,7 @@ spec_pspline = function(data,
                                 tau.alpha = tau.alpha, tau.beta = tau.beta,
                                 phi.alpha = phi.alpha, phi.beta = phi.beta,
                                 delta.alpha = delta.alpha, delta.beta = delta.beta,
-                                k = k, degree = degree, diffMatrixOrder = diffMatrixOrder,
+                                k = k, eqSpacedKnots = eqSpacedKnots, degree = degree, diffMatrixOrder = diffMatrixOrder,
                                 printIter = printIter, psd = NULL, add = FALSE);
 
       mcmc = gibbs_pspline(data = auxData, Ntotal = Ntotal, burnin = burnin,
@@ -111,7 +113,8 @@ spec_pspline = function(data,
                            tau.alpha = tau.alpha, tau.beta = tau.beta,
                            phi.alpha = phi.alpha, phi.beta = phi.beta,
                            delta.alpha = delta.alpha, delta.beta = delta.beta,
-                           k = k, degree = degree, diffMatrixOrder = diffMatrixOrder,
+                           k = k, eqSpacedKnots = eqSpacedKnots,
+                           degree = degree, diffMatrixOrder = diffMatrixOrder,
                            printIter = printIter,
                            psd = pilotmcmc, add = FALSE) ;
 
@@ -137,7 +140,8 @@ spec_pspline = function(data,
                          tau.alpha = tau.alpha, tau.beta = tau.beta,
                          phi.alpha = phi.alpha, phi.beta = phi.beta,
                          delta.alpha = delta.alpha, delta.beta = delta.beta,
-                         k = k, degree = degree, diffMatrixOrder = diffMatrixOrder,
+                         k = k, eqSpacedKnots = eqSpacedKnots,
+                         degree = degree, diffMatrixOrder = diffMatrixOrder,
                          printIter = printIter, psd = NULL, add = FALSE);
 
     for(i in 1:N){
@@ -152,7 +156,8 @@ spec_pspline = function(data,
                            tau.alpha = tau.alpha, tau.beta = tau.beta,
                            phi.alpha = phi.alpha, phi.beta = phi.beta,
                            delta.alpha = delta.alpha, delta.beta = delta.beta,
-                           k = k, degree = degree, diffMatrixOrder = diffMatrixOrder,
+                           k = k, eqSpacedKnots = eqSpacedKnots,
+                           degree = degree, diffMatrixOrder = diffMatrixOrder,
                            printIter = printIter, psd = mcmc, add = FALSE);
 
       out[[i]] = mcmc$fpsd.sample;

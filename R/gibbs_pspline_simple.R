@@ -20,30 +20,42 @@ gibbs_pspline_simple <- function(data,
                                  diffMatrixOrder = 2,
                                  printIter = 100) {
 
-  if (burnin >= Ntotal) stop("burnin must be less than Ntotal")
-  if (any(c(Ntotal, burnin, thin) %% 1 != 0 || any(c(Ntotal, burnin, thin) < 0)))
-  if (any(c(tau.alpha, tau.beta) <= 0)) stop(" tau.alpha and tau.beta must be strictly positive")
-  if (any(c(Ntotal, thin) %% 1 != 0) || any(c(Ntotal, thin) <= 0)) stop("Ntotal must be strictly positive integers")
-  if ((burnin %% 1 != 0) || (burnin < 0)) stop("burnin must be a non-negative integer")
+  if(burnin >= Ntotal) stop("burnin must be less than Ntotal");
+  if(any(c(Ntotal, thin) %% 1 != 0) || any(c(Ntotal, thin) <= 0)) stop("Ntotal and thin must be strictly positive integers");
+  if((burnin %% 1 != 0) || (burnin < 0)) stop("burnin must be a non-negative integer");
+  if(any(c(tau.alpha, tau.beta) <= 0)) stop("tau.alpha and tau.beta must be strictly positive");
+  if(any(c(phi.alpha, phi.beta) <= 0)) stop("phi.alpha and phi.beta must be strictly positive");
+  if(any(c(delta.alpha, delta.beta) <= 0)) stop("delta.alpha and delta.beta must be strictly positive");
+
+  if(!is.logical(eqSpacedKnots))stop("eqSpacedKnots must be a logical value");
 
   n <- length(data);
 
   # Which boundary frequencies to remove from likelihood computation and tau sample
-  if (n %% 2) {  # Odd length time series
-    bFreq <- 1  # Remove first
+  if (n %% 2) { # Odd length time series
+    bFreq <- 1; # Remove first
   }
   else {  # Even length time series
-    bFreq <- c(1, n)  # Remove first and last
+    bFreq <- c(1, n); # Remove first and last
   }
 
   if(is.null(k)){
+
     k = min(round(n/4), 40);
-    cat(paste("Number of B-splines k=", k, sep=""), "\n");
+    cat(paste("The number of B-splines has not been specified. Therefore, k=min(round(n/4), 40)=", k, sep=""), "\n");
+
+  }else{
+
+    if((k %% 1 !=0) || (k <= 0))stop("k must be strictly positive integer");
+    if((k < degree + 2 ))stop("k must be at least degree + 2");
+
   }
 
-  if( (Ntotal - burnin)/thin < k){stop("Change corresponding specifications in order to have (Ntotal-burnin)/thin > k")}
+  if((Ntotal - burnin)/thin < k)stop("Change corresponding specifications in order to have (Ntotal-burnin)/thin > k");
 
-  if( (printIter<=0) || (printIter %% 1 != 0) )stop("printIter must be a positive integer value");
+  if((printIter<=0) || (printIter %% 1 != 0) )stop("printIter must be a positive integer value");
+
+  if(!(k-2 >= diffMatrixOrder))stop("diffMatrixOrder must be lower than or equal to k-2");
 
   # Tolerance for mean centering
   tol <- 1e-4;
@@ -51,7 +63,7 @@ gibbs_pspline_simple <- function(data,
   # Mean center
   if (abs(mean(data)) > tol) {
     data <- data - mean(data);
-    warning("Data has been mean-centred")
+    warning("Data has been mean-centred");
   }
 
   # Optimal rescaling to prevent numerical issues
@@ -348,7 +360,11 @@ gibbs_pspline_simple <- function(data,
   pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
 
   # storing analysis specifications
-  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ, eqSpacedKnots = eqSpacedKnots);
+  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ,
+                  eqSpacedKnots = eqSpacedKnots, diffMatrixOrder = diffMatrixOrder,
+                  tau.alpha = tau.alpha, tau.beta = tau.beta,
+                  phi.alpha = phi.alpha, phi.beta = phi.beta,
+                  delta.alpha = delta.alpha, delta.beta = delta.beta);
 
   # List to output
   output = list(psd.median = psd.median * rescale ^ 2,

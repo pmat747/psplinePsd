@@ -2,12 +2,15 @@
 % Please edit documentation in R/internal_gibbs_core.R
 \name{dbspline}
 \alias{dbspline}
-\title{Generate a B-spline density basis of any degree}
+\title{Generate a B-spline density basis of any degree
+"dbspline" function has been taken from "bsplinePsd" package
+The other functions have been modified for our case.}
 \usage{
 dbspline(x, knots, degree = 3)
 }
 \description{
+Generate a B-spline density basis of any degree
 "dbspline" function has been taken from "bsplinePsd" package
-   Other functions have been modified for our case.
+The other functions have been modified for our case.
 }
 \keyword{internal}

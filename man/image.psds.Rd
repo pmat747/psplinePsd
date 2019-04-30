@@ -5,7 +5,7 @@
 \title{Plot method for psds class}
 \usage{
 \method{image}{psds}(x, func = "median", logZ = TRUE, zoomFreq = c(0,
-  1), ...)
+  1), fs = 16384, ...)
 }
 \arguments{
 \item{x}{an object of class psds}
@@ -16,13 +16,15 @@
 
 \item{zoomFreq}{interval which specifies the frequency axis to be plotted, for instance, c(0.2, 0.7) leaves out the 20\% and 30\% of the low and high frequencies, respectively.  The default value is c(0,1), i.e., all the frequencies}
 
+\item{fs}{sampling frequency}
+
 \item{...}{other graphical parameters from the image.plot function}
 }
 \value{
 plot of the estimate of the (log) spectrum
 }
 \description{
-This function produces a spectogram from a psds object
+This function produces a spectogram from a psds object.
 }
 \examples{
 \dontrun{

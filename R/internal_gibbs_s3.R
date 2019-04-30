@@ -29,7 +29,7 @@
 #' # Plot result on original scale with title
 #' plot(mcmc, ylog = FALSE, main = "Estimate of PSD using the P-spline method")
 #' }
-plot.psd = function(x, legend.loc = "topright", ylog = TRUE, ...) {  # Plot method for "psd" class
+plot.psd = function(x, legend.loc = 'topright', ylog = TRUE, ...) {  # Plot method for "psd" class
   N = length(x$pdgrm)
   freq = seq(0, pi, length = N)
   # Frequencies to remove from estimate

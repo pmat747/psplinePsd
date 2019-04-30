@@ -12,6 +12,6 @@ qpsd(omega, k, v, degree, db.list)
 Compute unnormalised PSD using random mixture of B-splines
 
 This function can deal with Inf values when taking exponential of weigths,
-  unlike the function "qpsd" defined above
+unlike the function "qpsd" defined above
 }
 \keyword{internal}
