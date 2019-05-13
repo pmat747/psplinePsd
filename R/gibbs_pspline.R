@@ -42,7 +42,7 @@
 #' @seealso \link{plot.psd}
 #' @references Edwards, M. C., Meyer, R., and Christensen, N. (2018), Bayesian nonparametric spectral density estimation using B-spline priors, \emph{Statistics and Computing}, <https://doi.org/10.1007/s11222-017-9796-9>.
 #'
-#' Maturana-Russel, P., and Meyer, R. (2019), Spectral density estimation using P-spline priors. ArXiv
+#' Maturana-Russel, P., and Meyer, R. (2019), Spectral density estimation using P-spline priors. arXiv:1905.01832.
 #'
 #' @examples
 #' \dontrun{
