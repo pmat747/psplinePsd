@@ -4,8 +4,7 @@
 \alias{image.psds}
 \title{Plot method for psds class}
 \usage{
-\method{image}{psds}(x, func = "median", logZ = TRUE, zoomFreq = c(0,
-  1), fs = 16384, ...)
+\method{image}{psds}(x, func = "median", logZ = TRUE, zoomFreq = c(0, 1), fs = 16384, ...)
 }
 \arguments{
 \item{x}{an object of class psds}

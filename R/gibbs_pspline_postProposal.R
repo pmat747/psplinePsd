@@ -4,6 +4,7 @@
 #' @importFrom Rcpp evalCpp
 #' @importFrom expm sqrtm
 #' @importFrom stats median rnorm runif rgamma
+#' @importFrom fda create.bspline.basis bsplinepen
 #' @useDynLib psplinePsd, .registration = TRUE
 #' @keywords internal
 gibbs_pspline_postProposal <- function(data,
@@ -102,12 +103,6 @@ gibbs_pspline_postProposal <- function(data,
   phi   <- rep(NA, N); # scalar in Multivariate Normal
   delta <- rep(NA, N);
 
-  # Difference Matrix
-  P       = diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
-  P       = t(P) %*% P;
-  epsilon = 1e-6; #1e-10;
-  P       = P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)
-
   ######################################
   ### Recycling gibbs_pspline output ###
   ######################################
@@ -144,6 +139,28 @@ gibbs_pspline_postProposal <- function(data,
   # Fixed knot number & location => a single calculation of B-spline densities
   knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
   db.list <- dbspline(omega, knots, degree);
+
+  # Difference Matrix
+  if(eqSpacedKnots == TRUE){
+
+    P       = diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
+    P       = t(P) %*% P;
+
+  }else{
+
+    if(degree <= diffMatrixOrder){
+      stop("bsplinepen function: penalty order must be lower than the bspline density degree");
+    }
+
+    nknots   = length(knots);
+    basisobj = fda::create.bspline.basis(c(0, knots[nknots-1]), norder = degree + 1,
+                                         nbasis = k - 1, breaks = knots[-nknots]);
+
+    P = fda::bsplinepen(basisobj, Lfdobj = diffMatrixOrder);
+  }
+
+  epsilon = 1e-6; #1e-6;
+  P       = P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)
 
   # Store log likelihood
   ll.trace    <- NULL;

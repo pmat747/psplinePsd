@@ -4,8 +4,20 @@
 \alias{lprior}
 \title{log-prior}
 \usage{
-lprior(k, v, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta, delta,
-  delta.alpha, delta.beta, P)
+lprior(
+  k,
+  v,
+  tau,
+  tau.alpha,
+  tau.beta,
+  phi,
+  phi.alpha,
+  phi.beta,
+  delta,
+  delta.alpha,
+  delta.beta,
+  P
+)
 }
 \description{
 log-prior

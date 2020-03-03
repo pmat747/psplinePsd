@@ -4,11 +4,25 @@
 \alias{gibbs_pspline}
 \title{Metropolis-within-Gibbs sampler for spectral inference of a stationary time series using a P-spline prior}
 \usage{
-gibbs_pspline(data, Ntotal, burnin, thin = 1, tau.alpha = 0.001,
-  tau.beta = 0.001, phi.alpha = 1, phi.beta = 1,
-  delta.alpha = 1e-04, delta.beta = 1e-04, k = NULL,
-  eqSpacedKnots = FALSE, degree = 3, diffMatrixOrder = 2,
-  printIter = 100, psd = NULL, add = FALSE)
+gibbs_pspline(
+  data,
+  Ntotal,
+  burnin,
+  thin = 1,
+  tau.alpha = 0.001,
+  tau.beta = 0.001,
+  phi.alpha = 1,
+  phi.beta = 1,
+  delta.alpha = 1e-04,
+  delta.beta = 1e-04,
+  k = NULL,
+  eqSpacedKnots = FALSE,
+  degree = 3,
+  diffMatrixOrder = 2,
+  printIter = 100,
+  psd = NULL,
+  add = FALSE
+)
 }
 \arguments{
 \item{data}{numeric vector}
@@ -101,7 +115,7 @@ lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
 \references{
 Edwards, M. C., Meyer, R., and Christensen, N. (2018), Bayesian nonparametric spectral density estimation using B-spline priors, \emph{Statistics and Computing}, <https://doi.org/10.1007/s11222-017-9796-9>.
 
-Maturana-Russel, P., and Meyer, R. (2019), Spectral density estimation using P-spline priors. ArXiv
+Maturana-Russel, P., and Meyer, R. (2019), Spectral density estimation using P-spline priors. arXiv:1905.01832.
 }
 \seealso{
 \link{plot.psd}

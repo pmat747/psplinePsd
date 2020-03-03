@@ -4,11 +4,31 @@
 \alias{spec_pspline}
 \title{Spectrum estimate via p-splines}
 \usage{
-spec_pspline(data, l, p, eq = TRUE, Ntotal1, burnin1, thin1, Ntotal,
-  burnin, thin, tau.alpha = 0.001, tau.beta = 0.001, phi.alpha = 1,
-  phi.beta = 1, delta.alpha = 1e-04, delta.beta = 1e-04, k = NULL,
-  eqSpacedKnots = FALSE, degree = 3, diffMatrixOrder = 3,
-  printIter = 1000, recycl = FALSE, likePlot = FALSE)
+spec_pspline(
+  data,
+  l,
+  p,
+  eq = TRUE,
+  Ntotal1,
+  burnin1,
+  thin1,
+  Ntotal,
+  burnin,
+  thin,
+  tau.alpha = 0.001,
+  tau.beta = 0.001,
+  phi.alpha = 1,
+  phi.beta = 1,
+  delta.alpha = 1e-04,
+  delta.beta = 1e-04,
+  k = NULL,
+  eqSpacedKnots = FALSE,
+  degree = 3,
+  diffMatrixOrder = 3,
+  printIter = 1000,
+  recycl = FALSE,
+  likePlot = FALSE
+)
 }
 \arguments{
 \item{data}{numeric vector}
