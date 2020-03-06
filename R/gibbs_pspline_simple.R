@@ -281,11 +281,11 @@ gibbs_pspline_simple <- function(data,
 
       # Note: (n - 1) and (n - 2) here.  Remove the first and last terms for even and first for odd
       if (n %% 2) {  # Odd length series
-        tau[i + 1] <- 1 / stats::rgamma(1, tau.alpha + (n - 1) / 2,
+        tau.store <- 1 / stats::rgamma(1, tau.alpha + (n - 1) / 2,
                                         tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
       }
       else {  # Even length series
-        tau[i + 1] <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
+        tau.store <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
                                         tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
       }
 
