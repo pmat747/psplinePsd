@@ -134,7 +134,7 @@ gibbs_pspline_postProposal <- function(data,
 
   v = solve(sqrt.covV) %*% (v - muV); # detransforming
 
-  V = matrix(v, ncol = 1);
+  V = matrix(v, ncol = 1); # To store beta values, see page 6 paper
 
   # Fixed knot number & location => a single calculation of B-spline densities
   knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
@@ -157,6 +157,8 @@ gibbs_pspline_postProposal <- function(data,
                                          nbasis = k - 1, breaks = knots[-nknots]);
 
     P = fda::bsplinepen(basisobj, Lfdobj = diffMatrixOrder);
+
+    P = P/norm(P);
   }
 
   epsilon = 1e-6; #1e-6;
@@ -306,7 +308,7 @@ gibbs_pspline_postProposal <- function(data,
       v = v.store;
 
       phi.store = stats::rgamma(1, shape = k1/2 + phi.alpha,
-                               rate = phi.beta * delta.store + t(v) %*% P %*% v / 2);
+                                rate = phi.beta * delta.store + t(v) %*% P %*% v / 2);
 
       #############
       ### delta ###
@@ -321,30 +323,30 @@ gibbs_pspline_postProposal <- function(data,
 
       # Directly sample tau from conjugate Inverse-Gamma density
 
-      q.psd <- qpsd(omega, k, V.store, degree, db.list);
+      q.psd <- qpsd(omega, k, v.store, degree, db.list);
 
       q <- unrollPsd(q.psd, n)
 
       # Note: (n - 1) and (n - 2) here.  Remove the first and last terms for even and first for odd
       if (n %% 2) {  # Odd length series
         tau.store <- 1 / stats::rgamma(1, tau.alpha + (n - 1) / 2,
-                                        tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
+                                       tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
       }
       else{  # Even length series
         tau.store <- 1 / stats::rgamma(1, tau.alpha + (n - 2) / 2,
-                                        tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
+                                       tau.beta + sum(pdgrm[-bFreq] / q[-bFreq]) / (2 * pi) / 2)
       }
 
     } # END: thining
 
-  ######################
-  ### Storing values ###
-  ######################
+    ######################
+    ### Storing values ###
+    ######################
 
-  phi[j+1]   = phi.store;
-  delta[j+1] = delta.store;
-  tau[j+1]   = tau.store;
-  V          = cbind(V, V.store);
+    phi[j+1]   = phi.store;
+    delta[j+1] = delta.store;
+    tau[j+1]   = tau.store;
+    V          = cbind(V, V.store);
 
   } # END: MCMC loop
 
@@ -437,8 +439,8 @@ gibbs_pspline_postProposal <- function(data,
             tau = tau_mean, pdgrm, degree, db.list);
 
   ls = apply(rbind(tau, V), 2, function(x){
-             llike(omega, FZ, k, v = x[-1],
-             tau = x[1], pdgrm, degree, db.list)});
+    llike(omega, FZ, k, v = x[-1],
+          tau = x[1], pdgrm, degree, db.list)});
 
   ls = unname(ls);
 
@@ -486,4 +488,4 @@ gibbs_pspline_postProposal <- function(data,
 
   return(output); # Return output
 
-  }  # Close function
+}  # Close function

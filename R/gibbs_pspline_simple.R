@@ -121,6 +121,8 @@ gibbs_pspline_simple <- function(data,
                                          nbasis = k - 1, breaks = knots[-nknots]);
 
     P = fda::bsplinepen(basisobj, Lfdobj = diffMatrixOrder);
+
+    P = P/norm(P);
   }
 
   epsilon = 1e-6; #1e-6;
