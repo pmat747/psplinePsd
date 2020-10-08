@@ -261,7 +261,7 @@ gibbs_pspline_simple <- function(data,
       ### phi ###
       ###########
 
-      phi.store = stats::rgamma(1, shape = k/2 + phi.alpha,
+      phi.store = stats::rgamma(1, shape = k1/2 + phi.alpha,
                                rate = phi.beta * delta.store + t(V.store) %*% P %*% V.store / 2);
 
       #############

@@ -112,18 +112,18 @@ knotLoc = function(data, k, degree, eqSpaced = FALSE){
 
   #aux   = (pdgrm - mean(pdgrm)) / sd(pdgrm);
   aux   = sqrt(pdgrm)
-  aux   = (aux - mean(aux))/stats::sd(aux)
+  dens  = abs(aux - mean(aux))/stats::sd(aux)
 
   N     = length(pdgrm);
 
   # function based on peridogram
-  f = stats::approxfun(x = seq(0,1,length = N), y = abs(aux)/sum(abs(aux)),
-                       yleft = 0, yright = 0);
+  #f = stats::approxfun(x = seq(0,1,length = N), y = abs(aux)/sum(abs(aux)),
+  #c                     yleft = 0, yright = 0);
 
   # cumulative values of f function
-  n    = 1000;
-  dens = f(seq(from = 0, to = 1, length = n));
-  dens = dens /sum(dens);
+  #n    = 1000;
+  #dens = f(seq(from = 0, to = 1, length = n));
+  dens = dens / sum(dens);
   cumf = cumsum(dens);
 
   # distribution function of f
