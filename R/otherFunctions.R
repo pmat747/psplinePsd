@@ -127,12 +127,12 @@ knotLoc = function(data, k, degree, eqSpaced = FALSE){
   cumf = cumsum(dens);
 
   # distribution function of f
-  df  = stats::approxfun(x = seq(0,1,length = n),
+  df  = stats::approxfun(x = seq(0,1,length = N),
                          y = cumf, yleft = 0, yright = 1);
 
   # inverse distribution of f
-  invDf = stats::approxfun(x = df(seq(0,1,length = n)),
-                           y = seq(0,1,length = n), yleft = 0, yright = 1);
+  invDf = stats::approxfun(x = df(seq(0,1,length = N)),
+                           y = seq(0,1,length = N), yleft = 0, yright = 1);
 
   # equally spaced knots
   knots = seq(0,1,length = k - degree + 1);
