@@ -24,7 +24,7 @@ spec_pspline(
   k = NULL,
   eqSpacedKnots = FALSE,
   degree = 3,
-  diffMatrixOrder = 3,
+  diffMatrixOrder = 1,
   printIter = 1000,
   recycl = FALSE,
   likePlot = FALSE

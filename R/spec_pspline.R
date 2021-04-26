@@ -61,7 +61,7 @@ spec_pspline = function(data,
                         k = NULL,
                         eqSpacedKnots = FALSE,
                         degree = 3,
-                        diffMatrixOrder = 3,
+                        diffMatrixOrder = 1,
                         printIter = 1000,
                         recycl = FALSE,
                         likePlot = FALSE){
@@ -69,6 +69,7 @@ spec_pspline = function(data,
   if (l %% 2 != 0) stop("this version of bsplinePsd must have l even")
 
   out   = list();
+  specs = list();
 
   index = ints(n = length(data), l = l, p = p, eq = eq);
 
@@ -86,6 +87,7 @@ spec_pspline = function(data,
     if( min(c(sn/4, 40)) != min(c(l/4,40)) ){
       k = round(min(c(l/4,40)));
       warning(paste("k has been set to ", k, ", thus the last subset analysis uses the same number of B-splines as the rest", sep = ""),"\n");
+      warning("The frequencies for the last interval may not be correct since this interval may have a different length");
     }
   }
 
@@ -118,7 +120,7 @@ spec_pspline = function(data,
                            printIter = printIter,
                            psd = pilotmcmc, add = FALSE) ;
 
-      out[[i]] = mcmc$fpsd.sample;
+      specs[[i]] = mcmc$fpsd.sample;
 
       if(likePlot == TRUE){
         graphics::par();
@@ -160,7 +162,7 @@ spec_pspline = function(data,
                            degree = degree, diffMatrixOrder = diffMatrixOrder,
                            printIter = printIter, psd = mcmc, add = FALSE);
 
-      out[[i]] = mcmc$fpsd.sample;
+      specs[[i]] = mcmc$fpsd.sample;
 
       if(likePlot == TRUE){
         graphics::par();
@@ -173,7 +175,20 @@ spec_pspline = function(data,
   cat(paste("Time elapsed: ", round(as.numeric(proc.time()[1] - ptime) / 60, 2),
             " minutes", sep = ""), "\n");
 
-  out[["info"]] = list(p = p, l = l);
+  out[["info"]]  = list(p = p, l = l);
+  out[["specs"]] = specs;
+  
+  # calculating frequency vector
+  N = dim(out$specs[[1]])[1];
+  freq = seq(0, pi, length = N);
+  # Frequencies to remove from estimate
+  #if (x$n %% 2) {  # Odd length time series
+  #  bFreq = 1
+  #}
+  #else {  # Even length time series
+  #  bFreq = c(1, N)
+  #}
+  out[["freq"]] = freq;
 
   class(out) = "psds"; # Assign S3 class to object
 
