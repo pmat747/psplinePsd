@@ -69,6 +69,7 @@ spec_pspline = function(data,
   if (l %% 2 != 0) stop("this version of bsplinePsd must have l even")
 
   out   = list();
+  psds  = list();
   specs = list();
 
   index = ints(n = length(data), l = l, p = p, eq = eq);
@@ -120,7 +121,7 @@ spec_pspline = function(data,
                            printIter = printIter,
                            psd = pilotmcmc, add = FALSE) ;
 
-      specs[[i]] = mcmc$fpsd.sample;
+      psds[[i]] = mcmc$fpsd.sample;
 
       if(likePlot == TRUE){
         graphics::par();
@@ -162,7 +163,7 @@ spec_pspline = function(data,
                            degree = degree, diffMatrixOrder = diffMatrixOrder,
                            printIter = printIter, psd = mcmc, add = FALSE);
 
-      specs[[i]] = mcmc$fpsd.sample;
+      psds[[i]] = mcmc$fpsd.sample;
 
       if(likePlot == TRUE){
         graphics::par();
@@ -176,10 +177,25 @@ spec_pspline = function(data,
             " minutes", sep = ""), "\n");
 
   out[["info"]]  = list(p = p, l = l);
-  out[["specs"]] = specs;
-  
+  out[["psds"]] = psds; # posterior samples for each time interval
+
+  # Spectogram -  Posterior samples
+  m = dim(psds[[1]])[2];# number of posterior samples / number of spectrograms
+
+  for(i in 1:m){
+    aux = NULL;
+    for(j in 1:N){
+
+      aux = cbind(aux, psds[[j]][, i]);
+
+    }
+    specs[[i]] = aux;
+  }
+
+  out[["specs"]] = specs; # posterior spectograms
+
   # calculating frequency vector
-  N = dim(out$specs[[1]])[1];
+  N = dim(out$psds[[1]])[1];
   freq = seq(0, pi, length = N);
   # Frequencies to remove from estimate
   #if (x$n %% 2) {  # Odd length time series

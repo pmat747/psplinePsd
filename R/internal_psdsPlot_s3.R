@@ -33,13 +33,13 @@ image.psds = function(x, func = 'median', logZ = TRUE, zoomFreq = c(0,1), fs = 1
     stop("zoomFreq must be a vector c(a,b) with values 0 <= a < b <= 1")
   }
 
-  N   = length(x$specs); # number of fpsd.sample elements
+  N   = length(x$psds); # number of fpsd.sample elements
   po  = x$info$p/100;
   pc  = 1-po;
   aux = NULL;
 
   for(i in 1:N){
-    aux = cbind(aux, apply(x$specs[[i]], 1, get(func))); # MEDIAN
+    aux = cbind(aux, apply(x$psds[[i]], 1, get(func))); # MEDIAN
   }
 
   aux = sqrt(aux);
