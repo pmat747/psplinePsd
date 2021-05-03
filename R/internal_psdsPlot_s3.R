@@ -27,19 +27,19 @@
 #'
 #' image(spec) # Plot log PSD (see documentation of iplot.psds)
 #' }
-image.psds = function(x, func = 'median', logZ = TRUE, zoomFreq = c(0,1), fs = 16384, ...) {  # Plot method for "psds" class
+image.psds = function(d, time = NULL, func = 'median', logZ = TRUE, zoomFreq = c(0,1), fs = 16384, ...) {  # Plot method for "psds" class
 
   if((zoomFreq[1]<0) || (zoomFreq[2]>1) || (zoomFreq[1] > zoomFreq[2])){
     stop("zoomFreq must be a vector c(a,b) with values 0 <= a < b <= 1")
   }
 
-  N   = length(x$psds); # number of fpsd.sample elements
-  po  = x$info$p/100;
+  N   = length(d$psds); # number of fpsd.sample elements
+  po  = d$info$p/100;
   pc  = 1-po;
   aux = NULL;
 
   for(i in 1:N){
-    aux = cbind(aux, apply(x$psds[[i]], 1, get(func))); # MEDIAN
+    aux = cbind(aux, apply(d$psds[[i]], 1, get(func))); # MEDIAN
   }
 
   aux = sqrt(aux);
@@ -50,8 +50,22 @@ image.psds = function(x, func = 'median', logZ = TRUE, zoomFreq = c(0,1), fs = 1
 
   }
 
-  i <- 1:N;
-  x <- round(x$info$l / fs * (i-1) * pc * 1000, 2); # number of intervals
+  i <- 1:length(d$psds);
+  x <- round(d$info$l / fs * (i-1) * pc * 1000, 2); # number of intervals
+
+  if(!is.null(time)){
+
+    if(length(time)==2){
+
+      x <- seq(from= time[1], to=time[2], length = length(x));
+
+    }else{
+
+      x = seq(from= time[1], to=time[length(time)], length = length(x));
+
+    }
+  }
+
   #y <- seq(0,1,length=dim(aux)[1]) # number of frequencies
   y <- seq(1,fs/2,length=dim(aux)[1]);
 
