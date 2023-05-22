@@ -4,11 +4,17 @@
 \alias{image.psds}
 \title{Plot method for psds class}
 \usage{
-\method{image}{psds}(x, func = "median", logZ = TRUE, zoomFreq = c(0, 1), fs = 16384, ...)
+\method{image}{psds}(
+  d,
+  time = NULL,
+  func = "median",
+  logZ = TRUE,
+  zoomFreq = c(0, 1),
+  fs = 16384,
+  ...
+)
 }
 \arguments{
-\item{x}{an object of class psds}
-
 \item{func}{statistics to be applied to \code{x}, e.g., \code{median} or \code{mean}}
 
 \item{logZ}{logical value (default is TRUE) to determine if the PSD should be on log scale}
@@ -18,6 +24,8 @@
 \item{fs}{sampling frequency}
 
 \item{...}{other graphical parameters from the image.plot function}
+
+\item{x}{an object of class psds}
 }
 \value{
 plot of the estimate of the (log) spectrum

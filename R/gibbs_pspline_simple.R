@@ -31,6 +31,7 @@ gibbs_pspline_simple <- function(data,
   if(!is.logical(eqSpacedKnots))stop("eqSpacedKnots must be a logical value");
 
   n <- length(data);
+  print(paste("Init data len:", n))
 
   # Which boundary frequencies to remove from likelihood computation and tau sample
   if (n %% 2) { # Odd length time series
@@ -66,7 +67,6 @@ gibbs_pspline_simple <- function(data,
     data <- data - mean(data);
     warning("Data has been mean-centred");
   }
-
   # Optimal rescaling to prevent numerical issues
   rescale = stats::sd(data);
   data = data / rescale;  # Data now has standard deviation 1
@@ -92,13 +92,7 @@ gibbs_pspline_simple <- function(data,
   phi[1]   <- phi.alpha/(phi.beta * delta[1]);
 
   # starting value for the weights
-  w = pdgrm / sum(pdgrm); # poor alternative: w=rep(0,k-1);
-  w = w[round(seq(1, length(w), length = k))];
-  w[which(w==0)] = 1e-50; # prevents errors when there are zeros
-  w = w/sum(w);
-  w = w[-k];
-  v = log(w / (1 - sum(w)));
-  V = matrix(v, ncol = 1);
+  V = get_initial_weights(pdgrm, k)
 
   # Fixed knot number & location => a single calculation of B-spline densities
   knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
@@ -376,7 +370,10 @@ gibbs_pspline_simple <- function(data,
 
   # Compute periodogram
   N     = length(psd.median); # N = (n + 1) / 2 (ODD) or N = n / 2 + 1 (EVEN)
+  print(paste("Final data len:", length(data)))
   pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
+  print(paste(" pdgrm len:", length(pdgrm)))
+  # pdgm len is 0.5*len(data)
 
   # storing analysis specifications
   anSpecif = list(k = k, n = n, degree = degree, FZ = FZ,

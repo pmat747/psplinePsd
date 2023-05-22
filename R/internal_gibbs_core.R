@@ -5,6 +5,8 @@
 #' @importFrom splines splineDesign
 #' @importFrom Rcpp evalCpp
 #' @keywords internal
+#' @useDynLib psplinePsd, .registration = TRUE
+#' @export
 dbspline = function (x, knots, degree = 3)  {
 
   knots.mult <- c(rep(knots[1], degree), knots, rep(knots[length(knots)], degree))
@@ -21,6 +23,25 @@ dbspline = function (x, knots, degree = 3)  {
   return(B.norm)
 
 }
+
+
+# Initialize spline weights using the data's preiodogram
+#' @keywords internal
+#' @useDynLib psplinePsd, .registration = TRUE
+#' @export
+get_initial_weights = function(pdgrm, k)
+{
+  w = pdgrm / sum(pdgrm); # poor alternative: w=rep(0,k-1);
+  w = w[round(seq(1, length(w), length = k))];
+  w[which(w==0)] = 1e-50; # prevents errors when there are zeros
+  w = w/sum(w);
+  w = w[-k];
+  v = log(w / (1 - sum(w)));
+  V = matrix(v, ncol = 1);
+  return(V)
+}
+
+
 
 #' Compute unnormalised PSD using random mixture of B-splines
 #' @importFrom Rcpp evalCpp
@@ -44,6 +65,8 @@ qpsd = function (omega, k, v, degree, db.list)
 #' unlike the function "qpsd" defined above
 #' @importFrom Rcpp evalCpp
 #' @keywords internal
+#' @useDynLib psplinePsd, .registration = TRUE
+#' @export
 qpsd = function (omega, k, v, degree, db.list)
 {
   v      <- as.numeric(v);
@@ -81,6 +104,11 @@ lprior = function (k, v, tau, tau.alpha, tau.beta, phi, phi.alpha, phi.beta,
                    delta, delta.alpha, delta.beta, P)
 {
   # Sigma^(-1) = P
+
+  lnw = (k-1)*log(phi)/2 - phi * t(v) %*% P %*% v / 2
+  lnp =phi.alpha * log(delta) + (phi.alpha - 1) * log(phi) - phi.beta * delta * phi
+  lnd =(delta.alpha - 1) * log(delta) - delta.beta * delta
+  lnt = -(tau.alpha + 1) * log(tau) - tau.beta/tau
 
   logprior <- (k-1)*log(phi)/2 - phi * t(v) %*% P %*% v / 2 + #MNormal on weights
 
@@ -137,3 +165,4 @@ lpost = function (omega, FZ, k, v, tau, tau.alpha, tau.beta,
 
   return(lp)
 }
+
