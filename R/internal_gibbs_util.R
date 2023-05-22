@@ -2,6 +2,8 @@
 #'
 #' FFT: Compute F_n X_n with the real-valued Fourier matrix F_n
 #' @keywords internal
+#' @useDynLib psplinePsd, .registration = TRUE
+#' @export
 fast_ft <- function(x) {
 
   # Function computes FZ (i.e. fast Fourier transformed data)

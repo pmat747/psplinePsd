@@ -2,8 +2,13 @@
 
 S3method(image,psds)
 S3method(plot,psd)
+export(dbspline)
+export(fast_ft)
+export(get_initial_weights)
 export(gibbs_pspline)
+export(knotLoc)
 export(postprocess)
+export(qpsd)
 export(spec_pspline)
 importFrom(Rcpp,evalCpp)
 importFrom(expm,sqrtm)

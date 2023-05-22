@@ -96,6 +96,8 @@ ints = function(n, l, p = 00, eq = TRUE){
 #' eqSpaced = if TRUE, it produces equally spaced knots, otherwise it allocates the knots according to the periodogram
 #' @importFrom stats approxfun sd
 #' @keywords internal
+#' @useDynLib psplinePsd, .registration = TRUE
+#' @export
 knotLoc = function(data, k, degree, eqSpaced = FALSE){
 
   if(eqSpaced == TRUE){
