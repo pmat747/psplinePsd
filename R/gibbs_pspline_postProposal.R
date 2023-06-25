@@ -132,19 +132,22 @@ gibbs_pspline_postProposal <- function(data,
 
   }
 
-  v = solve(sqrt.covV) %*% (v - muV); # detransforming
+  v      <- solve(sqrt.covV) %*% (v - muV); # detransforming
 
-  V = matrix(v, ncol = 1); # To store beta values, see page 6 paper
+  V      <- matrix(NA, nrow = length(v), ncol = N);
+  V[, 1] <- v;
+  
+  #V = matrix(v, ncol = 1); # To store beta values, see page 6 paper
 
   # Fixed knot number & location => a single calculation of B-spline densities
-  knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
+  knots   <- knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
   db.list <- dbspline(omega, knots, degree);
 
   # Difference Matrix
   if(eqSpacedKnots == TRUE){
 
-    P       = diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
-    P       = t(P) %*% P;
+    P       <- diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
+    P       <- t(P) %*% P;
 
   }else{
 
@@ -152,55 +155,55 @@ gibbs_pspline_postProposal <- function(data,
       stop("bsplinepen function: penalty order must be lower than the bspline density degree");
     }
 
-    nknots   = length(knots);
-    basisobj = fda::create.bspline.basis(c(0, knots[nknots-1]), norder = degree + 1,
-                                         nbasis = k - 1, breaks = knots[-nknots]);
+    nknots   <- length(knots);
+    basisobj <- fda::create.bspline.basis(c(0, knots[nknots-1]), norder = degree + 1,
+                                          nbasis = k - 1, breaks = knots[-nknots]);
 
-    P = fda::bsplinepen(basisobj, Lfdobj = diffMatrixOrder);
+    P <- fda::bsplinepen(basisobj, Lfdobj = diffMatrixOrder);
 
-    P = P/norm(P);
+    P <- P/norm(P);
   }
 
-  epsilon = 1e-6; #1e-6;
-  P       = P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)
+  epsilon <- 1e-6; #1e-6;
+  P       <- P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)
 
   # Store log likelihood
   ll.trace    <- NULL;
 
-  Count    = NULL; # acceptance probability
-  sigma    = 1;    # variance of proposal distb for weights
-  count    = 0.4;  # starting value for acc pbb - optimal value
+  Count    <- NULL; # acceptance probability
+  sigma    <- 1;    # variance of proposal distb for weights
+  count    <- 0.4;  # starting value for acc pbb - optimal value
 
-  k1 = k - 1;
+  k1       <- k - 1;
 
   # Random values
-  Zs = stats::rnorm((Ntotal-1)*k1);
-  Zs = matrix(Zs, nrow = Ntotal-1, ncol = k1);
-  Us = log(stats::runif((Ntotal-1)*k1, 0, 1));
-  Us = matrix(Us, nrow = Ntotal-1, ncol = k1);
+  Zs <- stats::rnorm((Ntotal-1)*k1);
+  Zs <- matrix(Zs, nrow = Ntotal-1, ncol = k1);
+  Us <- log(stats::runif((Ntotal-1)*k1, 0, 1));
+  Us <- matrix(Us, nrow = Ntotal-1, ncol = k1);
 
   # Initial values for the proposals
-  phi.store   = phi[1];
-  tau.store   = tau[1];
-  delta.store = delta[1];
-  V.store     = V[, 1];
+  phi.store   <- phi[1];
+  tau.store   <- tau[1];
+  delta.store <- delta[1];
+  V.store     <- V[, 1];
 
-  ptime = proc.time()[1]
+  ptime <- proc.time()[1]
 
   # Metropolis-within-Gibbs sampler
 
   for(j in 1:(N-1)){
 
-    adj    = (j - 1) * thin;
+    adj    <- (j - 1) * thin;
 
-    V.star = V.store; # proposal value
+    V.star <- V.store; # proposal value
 
-    aux    = sample(k1); # positions to be changed in the thining loop
+    aux    <- sample(k1); # positions to be changed in the thining loop
 
-    # Thining
+    # Thinning
     for (i in 1:thin) {
 
-      iter = i + adj;
+      iter <- i + adj;
 
       if (iter %% printIter == 0) {
         cat(paste("Iteration", iter, ",", "Time elapsed",
@@ -208,7 +211,7 @@ gibbs_pspline_postProposal <- function(data,
                   "minutes"), "\n")
       }
 
-      v.store = sqrt.covV %*% V.store + muV;
+      v.store  <- sqrt.covV %*% V.store + muV;
 
       f.store  <- lpost(omega,
                         FZ,
@@ -240,23 +243,23 @@ gibbs_pspline_postProposal <- function(data,
 
       if(count < 0.30){ # increasing acceptance pbb
 
-        sigma = sigma * 0.90; # decreasing proposal moves
+        sigma <- sigma * 0.90; # decreasing proposal moves
 
       }else if(count > 0.50){ # decreasing acceptance pbb
 
-        sigma = sigma * 1.1; # increasing proposal moves
+        sigma <- sigma * 1.1; # increasing proposal moves
 
       }
 
-      count   = 0; # acceptance probability
+      count   <- 0; # acceptance probability
 
       for(g in 1:k1){
 
-        pos         = aux[g];
+        pos         <- aux[g];
 
-        #sigma       = Sigma[pos]; # Another approach, individual variance
+        #sigma       <- Sigma[pos]; # Another approach, individual variance
 
-        V.star[pos] = V.store[pos] + sigma * Zs[iter, g];
+        V.star[pos] <- V.store[pos] + sigma * Zs[iter, g];
 
         v.star = sqrt.covV %*% V.star + muV;
 
@@ -297,25 +300,25 @@ gibbs_pspline_postProposal <- function(data,
 
       } # End updating weights
 
-      count       = count / k1;
-      Count[iter] = count; # acceptance probability
+      count       <- count / k1;
+      Count[iter] <- count; # acceptance probability
 
       ###########
       ### phi ###
       ###########
 
       #v = sqrt.covV %*% V.store + muV;
-      v = v.store;
+      v <- v.store;
 
-      phi.store = stats::rgamma(1, shape = k1/2 + phi.alpha,
-                                rate = phi.beta * delta.store + t(v) %*% P %*% v / 2);
+      phi.store <- stats::rgamma(1, shape = k1/2 + phi.alpha,
+                                 rate = phi.beta * delta.store + t(v) %*% P %*% v / 2);
 
       #############
       ### delta ###
       #############
 
-      delta.store = stats::rgamma(1, shape = phi.alpha + delta.alpha,
-                                  rate = phi.beta * phi.store + delta.beta);
+      delta.store <- stats::rgamma(1, shape = phi.alpha + delta.alpha,
+                                   rate = phi.beta * phi.store + delta.beta);
 
       ###########
       ### tau ###
@@ -343,11 +346,11 @@ gibbs_pspline_postProposal <- function(data,
     ### Storing values ###
     ######################
 
-    phi[j+1]   = phi.store;
-    delta[j+1] = delta.store;
-    tau[j+1]   = tau.store;
-    V          = cbind(V, V.store);
-
+    phi[j+1]   <- phi.store;
+    delta[j+1] <- delta.store;
+    tau[j+1]   <- tau.store;
+    V[, j+1]   <- V.store;
+    
   } # END: MCMC loop
 
   # Discarding burn-in period
@@ -366,8 +369,8 @@ gibbs_pspline_postProposal <- function(data,
 
   for(i in 1:length(keep)){
 
-    ll.trace = c(ll.trace,
-                 llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
+    ll.trace <- c(ll.trace,
+                  llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
   }
 
   fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega), ncol = length(keep));
@@ -384,30 +387,30 @@ gibbs_pspline_postProposal <- function(data,
 
     cat("Pilot and current analyses have been merged", "\n");
 
-    count = c(psd$count * k, Count); # k factor is cancelled return output
+    count <- c(psd$count * k, Count); # k factor is cancelled return output
 
     # db.list is equal in both analyses
 
-    delta = c(psd$delta, delta);
+    delta <- c(psd$delta, delta);
 
-    aux   = psd$fpsd.sample / (rescale^2);
+    aux   <- psd$fpsd.sample / (rescale^2);
 
-    fpsd.sample = cbind(aux, fpsd.sample);
+    fpsd.sample <- cbind(aux, fpsd.sample);
 
-    log.fpsd.sample = cbind(apply(aux, 2, logfuller), log.fpsd.sample);
+    log.fpsd.sample <- cbind(apply(aux, 2, logfuller), log.fpsd.sample);
 
-    ll.trace = c(psd$ll.trace, ll.trace);
+    ll.trace <- c(psd$ll.trace, ll.trace);
 
     # pdgrm is equal in both analyses
 
-    phi = c(psd$phi, phi);
+    phi <- c(psd$phi, phi);
 
     # psd.mean, psd.median, psd.p05, psd.p95, psd.u95
     #   are calculated below from fpsd.sample
 
-    tau = c(psd$tau, tau);
+    tau <- c(psd$tau, tau);
 
-    V   = cbind(psd$V, V);
+    V   <- cbind(psd$V, V);
 
   }
 
@@ -418,10 +421,10 @@ gibbs_pspline_postProposal <- function(data,
   psd.p95    <- apply(fpsd.sample, 1, stats::quantile, probs=0.95);
 
   # Transformed versions of these for uniform CI construction
-  log.fpsd.s <- apply(log.fpsd.sample, 1, stats::median);
-  log.fpsd.mad <- apply(log.fpsd.sample, 1, stats::mad);
+  log.fpsd.s    <- apply(log.fpsd.sample, 1, stats::median);
+  log.fpsd.mad  <- apply(log.fpsd.sample, 1, stats::mad);
   log.fpsd.help <- apply(log.fpsd.sample, 1, uniformmax);
-  log.Cvalue <- stats::quantile(log.fpsd.help, 0.9);
+  log.Cvalue    <- stats::quantile(log.fpsd.help, 0.9);
 
   # Compute Uniform CIs
   psd.u95 <- exp(log.fpsd.s + log.Cvalue * log.fpsd.mad);
@@ -431,60 +434,60 @@ gibbs_pspline_postProposal <- function(data,
   ### DIC ###
   ###########
 
-  tau_mean = mean(tau);
+  tau_mean <- mean(tau);
 
-  v_means = unname(apply(V, 1, mean)); # V was converted above
+  v_means <- unname(apply(V, 1, mean)); # V was converted above
 
-  l = llike(omega, FZ, k, v = v_means,
-            tau = tau_mean, pdgrm, degree, db.list);
+  l <- llike(omega, FZ, k, v = v_means,
+             tau = tau_mean, pdgrm, degree, db.list);
 
-  ls = apply(rbind(tau, V), 2, function(x){
+  ls <- apply(rbind(tau, V), 2, function(x){
     llike(omega, FZ, k, v = x[-1],
           tau = x[1], pdgrm, degree, db.list)});
 
-  ls = unname(ls);
+  ls <- unname(ls);
 
   # http://kylehardman.com/BlogPosts/View/6
   # DIC = -2 * (l - (2 * (l - mean(ls))));
 
-  D_PostMean = -2 * l;
-  D_bar      = -2 * mean(ls);
-  pd         = D_bar - D_PostMean;
+  D_PostMean <- -2 * l;
+  D_bar      <- -2 * mean(ls);
+  pd         <- D_bar - D_PostMean;
 
-  DIC = list(DIC = 2 * D_bar - D_PostMean, pd = pd);
+  DIC <- list(DIC = 2 * D_bar - D_PostMean, pd = pd);
 
   # Compute periodogram
-  N     = length(psd.median); # N = (n + 1) / 2 (ODD) or N = n / 2 + 1 (EVEN)
-  pdgrm = (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
+  N     <- length(psd.median); # N = (n + 1) / 2 (ODD) or N = n / 2 + 1 (EVEN)
+  pdgrm <- (abs(stats::fft(data)) ^ 2 / (2 * pi * n))[1:N];
 
   # storing analysis specifications
-  anSpecif = list(k = k, n = n, degree = degree, FZ = FZ,
+  anSpecif <- list(k = k, n = n, degree = degree, FZ = FZ,
                   eqSpacedKnots = eqSpacedKnots, diffMatrixOrder = diffMatrixOrder,
                   tau.alpha = tau.alpha, tau.beta = tau.beta,
                   phi.alpha = phi.alpha, phi.beta = phi.beta,
                   delta.alpha = delta.alpha, delta.beta = delta.beta);
 
   # List to output
-  output = list(psd.median = psd.median * rescale ^ 2,
-                psd.mean = psd.mean * rescale ^ 2,
-                psd.p05 = psd.p05 * rescale ^ 2,
-                psd.p95 = psd.p95 * rescale ^ 2,
-                psd.u05 = psd.u05 * rescale ^ 2,
-                psd.u95 = psd.u95 * rescale ^ 2,
-                fpsd.sample = fpsd.sample * rescale ^ 2,
-                anSpecif = anSpecif,
-                n = n,
-                tau = tau,
-                phi = phi,
-                delta = delta,
-                V = V,
-                ll.trace = ll.trace,
-                pdgrm = pdgrm * rescale ^ 2,
-                db.list = db.list,
-                DIC = DIC,
-                count = Count); # Acceptance probability
+  output <- list(psd.median = psd.median * rescale ^ 2,
+                 psd.mean = psd.mean * rescale ^ 2,
+                 psd.p05 = psd.p05 * rescale ^ 2,
+                 psd.p95 = psd.p95 * rescale ^ 2,
+                 psd.u05 = psd.u05 * rescale ^ 2,
+                 psd.u95 = psd.u95 * rescale ^ 2,
+                 fpsd.sample = fpsd.sample * rescale ^ 2,
+                 anSpecif = anSpecif,
+                 n = n,
+                 tau = tau,
+                 phi = phi,
+                 delta = delta,
+                 V = V,
+                 ll.trace = ll.trace,
+                 pdgrm = pdgrm * rescale ^ 2,
+                 db.list = db.list,
+                 DIC = DIC,
+                 count = Count); # Acceptance probability
 
-  class(output) = "psd"  # Assign S3 class to object
+  class(output) <- "psd"  # Assign S3 class to object
 
   return(output); # Return output
 
