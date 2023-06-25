@@ -68,14 +68,14 @@ gibbs_pspline_simple <- function(data,
   }
 
   # Optimal rescaling to prevent numerical issues
-  rescale = stats::sd(data);
-  data = data / rescale;  # Data now has standard deviation 1
+  rescale <- stats::sd(data);
+  data    <- data / rescale;  # Data now has standard deviation 1
 
   FZ <- fast_ft(data); # FFT data to frequency domain.  NOTE: Must be mean-centred.
 
   pdgrm <- abs(FZ) ^ 2; # Periodogram: NOTE: the length is n here.
 
-  omega <- 2 * (1:(n / 2 + 1) - 1) / n;  # Frequencies on unit interval
+  omega  <- 2 * (1:(n / 2 + 1) - 1) / n;  # Frequencies on unit interval
   lambda <- pi * omega; # Angular frequencies on [0, pi]
 
   # number of samples to be stored
@@ -92,23 +92,24 @@ gibbs_pspline_simple <- function(data,
   phi[1]   <- phi.alpha/(phi.beta * delta[1]);
 
   # starting value for the weights
-  w = pdgrm / sum(pdgrm); # poor alternative: w=rep(0,k-1);
-  w = w[round(seq(1, length(w), length = k))];
-  w[which(w==0)] = 1e-50; # prevents errors when there are zeros
-  w = w/sum(w);
-  w = w[-k];
-  v = log(w / (1 - sum(w)));
-  V = matrix(v, ncol = 1);
+  w              <- pdgrm / sum(pdgrm); # poor alternative: w=rep(0,k-1);
+  w              <- w[round(seq(1, length(w), length = k))];
+  w[which(w==0)] <- 1e-50; # prevents errors when there are zeros
+  w              <- w/sum(w);
+  w              <- w[-k];
+  v              <- log(w / (1 - sum(w)));
+  V              <- matrix(NA, nrow = length(v), ncol = N);
+  V[, 1]         <- v;
 
   # Fixed knot number & location => a single calculation of B-spline densities
-  knots = knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
+  knots   <- knotLoc(data = data, k = k, degree = degree, eqSpaced = eqSpacedKnots);
   db.list <- dbspline(omega, knots, degree);
 
   # Difference Matrix
   if(eqSpacedKnots == TRUE){
 
-    P       = diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
-    P       = t(P) %*% P;
+    P       <- diffMatrix(k-1, d = diffMatrixOrder); # Third order penalty
+    P       <- t(P) %*% P;
 
   }else{
 
@@ -116,37 +117,37 @@ gibbs_pspline_simple <- function(data,
       stop("bsplinepen function: penalty order must be lower than the bspline density degree");
     }
 
-    nknots   = length(knots);
-    basisobj = fda::create.bspline.basis(c(0, knots[nknots-1]), norder = degree + 1,
-                                         nbasis = k - 1, breaks = knots[-nknots]);
+    nknots   <- length(knots);
+    basisobj <- fda::create.bspline.basis(c(0, knots[nknots-1]), norder = degree + 1,
+                                          nbasis = k - 1, breaks = knots[-nknots]);
 
-    P = fda::bsplinepen(basisobj, Lfdobj = diffMatrixOrder);
+    P <- fda::bsplinepen(basisobj, Lfdobj = diffMatrixOrder);
 
-    P = P/norm(P);
+    P <- P/norm(P);
   }
 
-  epsilon = 1e-6; #1e-6;
-  P       = P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)
+  epsilon <- 1e-6; #1e-6;
+  P       <- P + epsilon * diag(dim(P)[2]); # P^(-1)=Sigma (Covariance matrix)
 
   # Store log likelihood
   ll.trace <- NULL;
 
-  Count = NULL; # acceptance probability
-  sigma = 1;    # variance of proposal distb for weights
-  count = 0.4;  # starting value for acc pbb - optimal value
-  k1    = k - 1;
+  Count <- NULL; # acceptance probability
+  sigma <- 1;    # variance of proposal distb for weights
+  count <- 0.4;  # starting value for acc pbb - optimal value
+  k1    <- k - 1;
 
   # Random values
-  Zs = stats::rnorm((Ntotal-1)*k1);
-  Zs = matrix(Zs, nrow = Ntotal-1, ncol = k1);
-  Us = log(stats::runif((Ntotal-1)*k1, 0, 1));
-  Us = matrix(Us, nrow = Ntotal-1, ncol = k1);
+  Zs <- stats::rnorm((Ntotal-1)*k1);
+  Zs <- matrix(Zs, nrow = Ntotal-1, ncol = k1);
+  Us <- log(stats::runif((Ntotal-1)*k1, 0, 1));
+  Us <- matrix(Us, nrow = Ntotal-1, ncol = k1);
 
   # Initial values for the proposals
-  phi.store   = phi[1];
-  tau.store   = tau[1];
-  delta.store = delta[1];
-  V.store     = V[, 1];
+  phi.store   <- phi[1];
+  tau.store   <- tau[1];
+  delta.store <- delta[1];
+  V.store     <- V[, 1];
 
   ptime = proc.time()[1]
 
@@ -154,16 +155,16 @@ gibbs_pspline_simple <- function(data,
 
   for(j in 1:(N-1)){
 
-    adj    = (j - 1) * thin;
+    adj    <- (j - 1) * thin;
 
-    V.star = V.store; # proposal value
+    V.star <- V.store; # proposal value
 
-    aux    = sample(k1); # positions to be changed in the thining loop
+    aux    <- sample(k1); # positions to be changed in the thining loop
 
-    # Thining
+    # Thinning
     for (i in 1:thin) {
 
-      iter = i + adj;
+      iter <- i + adj;
 
       if (iter %% printIter == 0) {
         cat(paste("Iteration", iter, ",", "Time elapsed",
@@ -193,17 +194,15 @@ gibbs_pspline_simple <- function(data,
       ### WEIGHT ###
       ##############
 
-      #aux     = sample(k1);
-
-      # tunning proposal distribution
+      # tuning proposal distribution
 
       if(count < 0.30){ # increasing acceptance pbb
 
-        sigma = sigma * 0.90; # decreasing proposal moves
+        sigma <- sigma * 0.90; # decreasing proposal moves
 
       }else if(count > 0.50){ # decreasing acceptance pbb
 
-        sigma = sigma * 1.1; # increasing proposal moves
+        sigma <- sigma * 1.1; # increasing proposal moves
 
       }
 
@@ -211,9 +210,9 @@ gibbs_pspline_simple <- function(data,
 
       for(g in 1:k1){
 
-        pos         = aux[g];
+        pos         <- aux[g];
 
-        V.star[pos] = V.store[pos] + sigma * Zs[iter, g];
+        V.star[pos] <- V.store[pos] + sigma * Zs[iter, g];
 
         f.V.star <- lpost(omega,
                           FZ,
@@ -248,28 +247,28 @@ gibbs_pspline_simple <- function(data,
 
         }else {
 
-          V.star[pos] = V.store[pos]; # reseting proposal value
+          V.star[pos] <- V.store[pos]; # reseting proposal value
 
         }
 
       } # End updating weights
 
-      count       = count / k1;
-      Count[iter] = count; # Acceptance probability
+      count       <- count / k1;
+      Count[iter] <- count; # Acceptance probability
 
       ###########
       ### phi ###
       ###########
 
-      phi.store = stats::rgamma(1, shape = k1/2 + phi.alpha,
-                               rate = phi.beta * delta.store + t(V.store) %*% P %*% V.store / 2);
+      phi.store <- stats::rgamma(1, shape = k1/2 + phi.alpha,
+                                rate = phi.beta * delta.store + t(V.store) %*% P %*% V.store / 2);
 
       #############
       ### delta ###
       #############
 
-      delta.store = stats::rgamma(1, shape = phi.alpha + delta.alpha,
-                                  rate = phi.beta * phi.store + delta.beta);
+      delta.store <- stats::rgamma(1, shape = phi.alpha + delta.alpha,
+                                   rate = phi.beta * phi.store + delta.beta);
 
       ###########
       ### tau ###
@@ -297,11 +296,11 @@ gibbs_pspline_simple <- function(data,
   ### Storing values ###
   ######################
 
-  phi[j+1]   = phi.store;
-  delta[j+1] = delta.store;
-  tau[j+1]   = tau.store;
-  V          = cbind(V, V.store);
-
+  phi[j+1]   <- phi.store;
+  delta[j+1] <- delta.store;
+  tau[j+1]   <- tau.store;
+  V[, j+1]   <- V.store;
+  
   ### ###
 
 }  # END: MCMC loop
@@ -319,8 +318,8 @@ gibbs_pspline_simple <- function(data,
 
   for(i in 1:length(keep)){
 
-    ll.trace = c(ll.trace,
-                 llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
+    ll.trace <- c(ll.trace,
+                  llike(omega, FZ, k, V[,i], tau[i], pdgrm, degree, db.list));
   }
 
   fpsd.sample <- log.fpsd.sample <- matrix(NA, nrow = length(omega), ncol = length(keep));
@@ -335,15 +334,15 @@ gibbs_pspline_simple <- function(data,
 
   # Compute point estimates and 90% Pointwise CIs
   psd.median <- apply(fpsd.sample, 1, stats::median);
-  psd.mean <- apply(fpsd.sample, 1, mean);
-  psd.p05 <- apply(fpsd.sample, 1, stats::quantile, probs=0.05);
-  psd.p95 <- apply(fpsd.sample, 1, stats::quantile, probs=0.95);
+  psd.mean   <- apply(fpsd.sample, 1, mean);
+  psd.p05    <- apply(fpsd.sample, 1, stats::quantile, probs=0.05);
+  psd.p95    <- apply(fpsd.sample, 1, stats::quantile, probs=0.95);
 
   # Transformed versions of these for uniform CI construction
-  log.fpsd.s <- apply(log.fpsd.sample, 1, stats::median);
-  log.fpsd.mad <- apply(log.fpsd.sample, 1, stats::mad);
+  log.fpsd.s    <- apply(log.fpsd.sample, 1, stats::median);
+  log.fpsd.mad  <- apply(log.fpsd.sample, 1, stats::mad);
   log.fpsd.help <- apply(log.fpsd.sample, 1, uniformmax);
-  log.Cvalue <- stats::quantile(log.fpsd.help, 0.9);
+  log.Cvalue    <- stats::quantile(log.fpsd.help, 0.9);
 
   # Compute Uniform CIs
   psd.u95 <- exp(log.fpsd.s + log.Cvalue * log.fpsd.mad);
